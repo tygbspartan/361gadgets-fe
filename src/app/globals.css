@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: var(--font-inter), "Inter", sans-serif;
+  --font-montserrat: var(--font-montserrat), "Montserrat", sans-serif;
+
+  --color-background: #fafafa;
+  --color-foreground: #000000;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #000000;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #000000;
+
+  --color-primary: #bf1e2e; /* fallback; actual value set from BRAND.primaryColor in layout.tsx */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #000000;
+
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #000000;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #bf1e2e; /* fallback; actual value set from BRAND.primaryColor in layout.tsx */
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Homepage product grid: 2 → 3 → 4 columns, then 5 only at 1350px+.
+   Plain media queries so it never loses a specificity/ordering battle. */
+.home-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .home-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .home-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+@media (min-width: 1350px) {
+  .home-product-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Product gallery thumbnails: 3 per row on mobile, 4 from 768px, then a
+   full-width column from 1024px (beside the main image). */
+.thumb-strip-item {
+  flex: 0 0 calc((100% - 1.25rem) / 3);
+}
+@media (min-width: 768px) {
+  .thumb-strip-item {
+    flex-basis: calc((100% - 1.875rem) / 4);
+  }
+}
+@media (min-width: 1024px) {
+  .thumb-strip-item {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+
+/* Products listing grid: 2 cols on mobile, 3 cols up to 1350px, 4 cols above. */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+@media (min-width: 1400px) {
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* Container with fluid side padding: locked at 24px through mobile
+   (up to ~768px), then scaling smoothly up to 120px at ~1920px.
+   The calc is continuous, so there is no jump at the breakpoint. */
+.page-wrapper {
+  width: 100%;
+  padding-left: clamp(1.5rem, 8.333vw - 2.5rem, 7.5rem);
+  padding-right: clamp(1.5rem, 8.333vw - 2.5rem, 7.5rem);
+}
+
+/* Top bar: non-standard 0.5px border can't be done with Tailwind.
+   Mobile uses 12px top/bottom padding; desktop uses a fixed 91px height. */
+.nav-top-bar {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid #efefef;
+}
+
+@media (min-width: 1024px) {
+  .nav-top-bar {
+    height: 91px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* Bottom nav shadow */
+.navbar-shadow {
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.2);
+}
+
+/*
+ * Category items — stretch to fill the 62px parent so border-bottom
+ * is flush with the very bottom edge. The parent must NOT have
+ * items-center (use default stretch instead).
+ */
+.nav-cat-item {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  cursor: pointer;
+}
+
+/* Search Dropdown Scrollbar */
+.search-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb {
+  background: #dc2626;
+  border-radius: 3px;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #b91c1c;
+}
+
+/* Infinite brand marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+    width: max-content;
+    will-change: transform;
+  }
+}
