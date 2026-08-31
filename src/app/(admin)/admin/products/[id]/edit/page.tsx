@@ -8,7 +8,7 @@ import {
   useUploadProductImageMutation,
 } from "@/lib/redux/features/products/productsApi";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
-import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
+import { useGetAdminBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,16 +30,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
 
-const SKIN_TYPES = ["Normal", "Dry", "Oily", "Combination", "Sensitive"];
+// A color variant row (stock is a string for controlled inputs).
+type ColorRow = {
+  name: string;
+  hexCode: string;
+  sku: string;
+  stockQuantity: string;
+};
 
-const SKIN_CONCERNS = [
-  "Acne & Breakouts", "Oil Control", "Large Pores", "Dryness",
-  "Dehydration", "Sensitivity & Redness", "Dark Spots & Hyperpigmentation",
-  "Uneven Skin Tone", "Dullness & Brightening", "Uneven Texture",
-  "Fine Lines & Wrinkles", "Firmness & Elasticity", "Dark Circles",
-  "Puffiness", "Sun Protection",
-];
+const emptyColor = (): ColorRow => ({
+  name: "",
+  hexCode: "",
+  sku: "",
+  stockQuantity: "",
+});
 
 type LocalImage = {
   imageUrl: string;
@@ -62,7 +69,14 @@ export default function EditProductPage() {
     useUploadProductImageMutation();
 
   const { data: categoriesData } = useGetCategoriesQuery();
-  const { data: brandsData } = useGetBrandsQuery();
+  // Scoped list: a vendor gets only their assigned brands; superadmin gets all.
+  const { data: brandsData } = useGetAdminBrandsQuery();
+
+  // Only the superadmin can feature products on the store-front.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canFeature = isSuper(role);
+
+  const usableBrands = brandsData?.data ?? [];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -79,11 +93,16 @@ export default function EditProductPage() {
     isActive: true,
     isFeatured: false,
     homepageFeature: false,
-    skinType: [] as string[],
-    skinConcern: [] as string[],
     metaTitle: "",
     metaDescription: "",
   });
+
+  const [colors, setColors] = useState<ColorRow[]>([]);
+  const hasColors = colors.length > 0;
+  const colorsStockTotal = colors.reduce(
+    (sum, c) => sum + (parseInt(c.stockQuantity) || 0),
+    0,
+  );
 
   // Existing images loaded from the server
   const [images, setImages] = useState<LocalImage[]>([]);
@@ -118,11 +137,24 @@ export default function EditProductPage() {
       isActive: p.isActive ?? true,
       isFeatured: p.isFeatured ?? false,
       homepageFeature: p.homepageFeature ?? false,
-      skinType: p.skinType ?? [],
-      skinConcern: p.skinConcern ?? [],
       metaTitle: p.metaTitle || "",
       metaDescription: p.metaDescription || "",
     });
+
+    if (p.colors && p.colors.length > 0) {
+      setColors(
+        [...p.colors]
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .map((c) => ({
+            name: c.name,
+            hexCode: c.hexCode || "",
+            sku: c.sku || "",
+            stockQuantity: String(c.stockQuantity),
+          })),
+      );
+    } else {
+      setColors([]);
+    }
 
     if (p.images && p.images.length > 0) {
       setImages(
@@ -133,13 +165,13 @@ export default function EditProductPage() {
             altText: img.altText || "",
             isPrimary: img.isPrimary,
             displayOrder: img.displayOrder,
-          }))
+          })),
       );
     }
 
     if (p.specifications && p.specifications.length > 0) {
       setSpecifications(
-        p.specifications.map((s) => ({ key: s.key, value: s.value }))
+        p.specifications.map((s) => ({ key: s.key, value: s.value })),
       );
     }
   }, [productData]);
@@ -147,7 +179,7 @@ export default function EditProductPage() {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
@@ -158,15 +190,13 @@ export default function EditProductPage() {
     }
   };
 
-  const toggleArrayItem = (field: "skinType" | "skinConcern", value: string) => {
-    setFormData((prev) => {
-      const arr = prev[field];
-      return {
-        ...prev,
-        [field]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
-      };
-    });
-  };
+  const addColor = () => setColors((prev) => [...prev, emptyColor()]);
+  const updateColor = (index: number, field: keyof ColorRow, value: string) =>
+    setColors((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+    );
+  const removeColor = (index: number) =>
+    setColors((prev) => prev.filter((_, i) => i !== index));
 
   // ── Image handlers ────────────────────────────────────────────────────────
 
@@ -177,8 +207,7 @@ export default function EditProductPage() {
       // A new staged file is primary only if there are no existing images and
       // no staged files yet, and this is the first file in the selection.
       const noPrimaryYet =
-        !images.some((img) => img.isPrimary) &&
-        !prev.some((f) => f.isPrimary);
+        !images.some((img) => img.isPrimary) && !prev.some((f) => f.isPrimary);
       return [
         ...prev,
         ...incoming.map((file, i) => ({
@@ -193,7 +222,7 @@ export default function EditProductPage() {
   // Set an existing server image as primary; clear primary on all staged files
   const setPrimaryExisting = (index: number) => {
     setImages((prev) =>
-      prev.map((img, i) => ({ ...img, isPrimary: i === index }))
+      prev.map((img, i) => ({ ...img, isPrimary: i === index })),
     );
     setImageFiles((prev) => prev.map((f) => ({ ...f, isPrimary: false })));
   };
@@ -201,7 +230,7 @@ export default function EditProductPage() {
   // Set a staged file as primary; clear primary on all existing images
   const setPrimaryStaged = (index: number) => {
     setImageFiles((prev) =>
-      prev.map((f, i) => ({ ...f, isPrimary: i === index }))
+      prev.map((f, i) => ({ ...f, isPrimary: i === index })),
     );
     setImages((prev) => prev.map((img) => ({ ...img, isPrimary: false })));
   };
@@ -219,7 +248,7 @@ export default function EditProductPage() {
           next[0] = { ...next[0], isPrimary: true };
         } else {
           setImageFiles((staged) =>
-            staged.map((f, i) => ({ ...f, isPrimary: i === 0 }))
+            staged.map((f, i) => ({ ...f, isPrimary: i === 0 })),
           );
         }
       }
@@ -238,7 +267,7 @@ export default function EditProductPage() {
           next[0] = { ...next[0], isPrimary: true };
         } else {
           setImages((imgs) =>
-            imgs.map((img, i) => ({ ...img, isPrimary: i === 0 }))
+            imgs.map((img, i) => ({ ...img, isPrimary: i === 0 })),
           );
         }
       }
@@ -270,11 +299,27 @@ export default function EditProductPage() {
     setError("");
     setSuccess("");
 
-    if (!formData.name || !formData.price || !formData.stockQuantity) {
+    if (
+      !formData.name ||
+      !formData.price ||
+      (!formData.stockQuantity && !hasColors)
+    ) {
       setError(
-        "Please fill in all required fields (Name, Price, Stock Quantity)"
+        "Please fill in all required fields (Name, Price, Stock Quantity or Colors)",
       );
       return;
+    }
+    if (hasColors) {
+      const invalid = colors.some(
+        (c) =>
+          !c.name.trim() ||
+          c.stockQuantity === "" ||
+          parseInt(c.stockQuantity) < 0,
+      );
+      if (invalid) {
+        setError("Each color needs a name and a valid stock quantity");
+        return;
+      }
     }
     if (images.length === 0 && imageFiles.length === 0) {
       setError("Please add at least one product image");
@@ -321,7 +366,10 @@ export default function EditProductPage() {
         costPrice: formData.costPrice
           ? parseFloat(formData.costPrice)
           : undefined,
-        stockQuantity: parseInt(formData.stockQuantity),
+        // With colors the server derives stock from the sum.
+        stockQuantity: hasColors
+          ? colorsStockTotal
+          : parseInt(formData.stockQuantity),
         lowStockThreshold: formData.lowStockThreshold
           ? parseInt(formData.lowStockThreshold)
           : undefined,
@@ -331,10 +379,22 @@ export default function EditProductPage() {
           ? parseInt(formData.categoryId)
           : undefined,
         isActive: formData.isActive,
-        isFeatured: formData.isFeatured,
-        homepageFeature: formData.homepageFeature,
-        skinType: formData.skinType,
-        skinConcern: formData.skinConcern,
+        // Feature flags are superadmin-only; vendors never send them (server
+        // leaves the existing values untouched).
+        ...(canFeature
+          ? {
+              isFeatured: formData.isFeatured,
+              homepageFeature: formData.homepageFeature,
+            }
+          : {}),
+        // Always send colors (empty array clears them server-side).
+        colors: colors.map((c, i) => ({
+          name: c.name.trim(),
+          hexCode: c.hexCode.trim() || undefined,
+          sku: c.sku.trim() || undefined,
+          stockQuantity: parseInt(c.stockQuantity) || 0,
+          displayOrder: i,
+        })),
         metaTitle: formData.metaTitle || undefined,
         metaDescription: formData.metaDescription || undefined,
         countryOfOrigin: formData.countryOfOrigin || undefined,
@@ -364,13 +424,23 @@ export default function EditProductPage() {
               altText: img.altText || "",
               isPrimary: img.isPrimary,
               displayOrder: img.displayOrder,
-            }))
+            })),
         );
         setSpecifications(
           (updated.specifications ?? []).map((s) => ({
             key: s.key,
             value: s.value,
-          }))
+          })),
+        );
+        setColors(
+          [...(updated.colors ?? [])]
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .map((c) => ({
+              name: c.name,
+              hexCode: c.hexCode || "",
+              sku: c.sku || "",
+              stockQuantity: String(c.stockQuantity),
+            })),
         );
       }
 
@@ -515,7 +585,7 @@ export default function EditProductPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Select Brand</option>
-                  {brandsData?.data.map((brand) => (
+                  {usableBrands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
                     </option>
@@ -636,6 +706,96 @@ export default function EditProductPage() {
           </CardContent>
         </Card>
 
+        {/* Color Variants */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Color Variants</CardTitle>
+            <CardDescription>
+              Optional. Each color tracks its own stock. Leave empty for a
+              single-stock product (uses the Inventory stock above).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {colors.length > 0 && (
+              <div className="space-y-3">
+                {colors.map((color, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end border rounded-md p-3"
+                  >
+                    <div className="md:col-span-4 space-y-1">
+                      <Label className="text-xs">
+                        Color name <span className="text-primary">*</span>
+                      </Label>
+                      <Input
+                        value={color.name}
+                        onChange={(e) =>
+                          updateColor(index, "name", e.target.value)
+                        }
+                        placeholder="e.g., Space Black"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-xs">Swatch</Label>
+                      <input
+                        type="color"
+                        value={color.hexCode || "#000000"}
+                        onChange={(e) =>
+                          updateColor(index, "hexCode", e.target.value)
+                        }
+                        className="w-full h-9 rounded border cursor-pointer"
+                      />
+                    </div>
+                    <div className="md:col-span-3 space-y-1">
+                      <Label className="text-xs">SKU</Label>
+                      <Input
+                        value={color.sku}
+                        onChange={(e) =>
+                          updateColor(index, "sku", e.target.value)
+                        }
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-xs">
+                        Stock <span className="text-primary">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={color.stockQuantity}
+                        onChange={(e) =>
+                          updateColor(index, "stockQuantity", e.target.value)
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="md:col-span-1 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeColor(index)}
+                      >
+                        <X className="h-4 w-4 text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <p className="text-sm text-muted-foreground">
+                  Total stock across colors:{" "}
+                  <span className="font-medium">{colorsStockTotal}</span> (this
+                  becomes the product stock)
+                </p>
+              </div>
+            )}
+            <Button type="button" variant="outline" onClick={addColor}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Color
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Product Images */}
         <Card>
           <CardHeader>
@@ -692,7 +852,7 @@ export default function EditProductPage() {
                     <p className="text-sm truncate flex-1">{img.imageUrl}</p>
                     <div className="flex items-center gap-2 shrink-0">
                       {img.isPrimary ? (
-                        <span className="text-xs bg-primary text-white px-2 py-1 rounded">
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
                           Primary
                         </span>
                       ) : (
@@ -738,7 +898,7 @@ export default function EditProductPage() {
                     <p className="text-sm truncate flex-1">{item.file.name}</p>
                     <div className="flex items-center gap-2 shrink-0">
                       {item.isPrimary ? (
-                        <span className="text-xs bg-primary text-white px-2 py-1 rounded">
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
                           Primary
                         </span>
                       ) : (
@@ -818,48 +978,6 @@ export default function EditProductPage() {
           </CardContent>
         </Card>
 
-        {/* Skin Profile */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Skin Profile</CardTitle>
-            <CardDescription>Target skin types and concerns for this product</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Skin Type</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {SKIN_TYPES.map((type) => (
-                  <label key={type} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formData.skinType.includes(type)}
-                      onChange={() => toggleArrayItem("skinType", type)}
-                      className="w-4 h-4 accent-primary rounded"
-                    />
-                    <span className="text-sm">{type}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Skin Concern</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {SKIN_CONCERNS.map((concern) => (
-                  <label key={concern} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formData.skinConcern.includes(concern)}
-                      onChange={() => toggleArrayItem("skinConcern", concern)}
-                      className="w-4 h-4 accent-primary rounded"
-                    />
-                    <span className="text-sm">{concern}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* SEO Settings */}
         <Card>
           <CardHeader>
@@ -928,42 +1046,53 @@ export default function EditProductPage() {
                 className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-md">
-              <div>
-                <Label htmlFor="isFeatured" className="text-base font-medium">
-                  Featured
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Show this product in featured section
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="isFeatured"
-                name="isFeatured"
-                checked={!!formData.isFeatured}
-                onChange={handleInputChange}
-                className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-md">
-              <div>
-                <Label htmlFor="homepageFeature" className="text-base font-medium">
-                  Homepage Featured
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Show this product in the homepage featured section
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="homepageFeature"
-                name="homepageFeature"
-                checked={!!formData.homepageFeature}
-                onChange={handleInputChange}
-                className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
-              />
-            </div>
+            {/* Featured flags are curated by the platform — superadmin only. */}
+            {canFeature && (
+              <>
+                <div className="flex items-center justify-between p-4 border rounded-md">
+                  <div>
+                    <Label
+                      htmlFor="isFeatured"
+                      className="text-base font-medium"
+                    >
+                      Featured
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show this product in featured section
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="isFeatured"
+                    name="isFeatured"
+                    checked={!!formData.isFeatured}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-md">
+                  <div>
+                    <Label
+                      htmlFor="homepageFeature"
+                      className="text-base font-medium"
+                    >
+                      Homepage Featured
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show this product in the homepage featured section
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="homepageFeature"
+                    name="homepageFeature"
+                    checked={!!formData.homepageFeature}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -973,7 +1102,9 @@ export default function EditProductPage() {
             {isUpdating || isUploadingImage ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {isUploadingImage ? "Uploading Images..." : "Updating Product..."}
+                {isUploadingImage
+                  ? "Uploading Images..."
+                  : "Updating Product..."}
               </>
             ) : (
               "Update Product"

@@ -151,7 +151,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                     checked={isSelected}
                     disabled={isOOS}
                     onChange={() => !isOOS && toggleSelect(item.id)}
-                    className={`w-4 h-4 self-center shrink-0 accent-black ${
+                    className={`w-4 h-4 self-center shrink-0 accent-primary ${
                       isOOS ? "cursor-not-allowed" : "cursor-pointer"
                     }`}
                   />
@@ -260,7 +260,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
           <button
             onClick={handleMoveToCart}
             disabled={selectedIds.size === 0 || isMoving || isMovingGuest}
-            className="w-full bg-black text-white font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isMoving || isMovingGuest ? "ADDING…" : "ADD TO CART"}
           </button>

@@ -7,6 +7,7 @@ import { setCredentials } from "@/lib/redux/features/auth/authSlice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertCircle } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { isPrivileged } from "@/constants/roles";
 import { useState } from "react";
 
 function GoogleSuccessContent() {
@@ -74,8 +75,8 @@ function GoogleSuccessContent() {
 
         console.log("User authenticated successfully, redirecting...");
 
-        // Redirect based on role
-        if (userData.data.role === "admin") {
+        // Redirect based on role — vendors AND superadmin reach the admin panel.
+        if (isPrivileged(userData.data.role)) {
           router.push(ROUTES.ADMIN_DASHBOARD);
         } else {
           router.push(ROUTES.HOME);
@@ -117,7 +118,7 @@ function GoogleSuccessContent() {
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Signing you in...</h2>
             <p className="text-gray-600">
               Please wait while we complete your Google sign-in.
@@ -134,7 +135,7 @@ export default function GoogleSuccessPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       }
     >

@@ -24,6 +24,22 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
+/**
+ * Convenience wrappers so call sites don't repeat the icon/variant boilerplate.
+ *   const { toastSuccess, toastError } = useToastHelpers();
+ *   toastSuccess("Brand deleted");
+ *   toastError(err?.data?.message || "Failed to delete brand");
+ */
+export function useToastHelpers() {
+  const { showToast } = useToast();
+  return {
+    toastSuccess: (title: string, description?: string) =>
+      showToast({ icon: "mdi:check-circle", title, description, variant: "positive" }),
+    toastError: (title: string, description?: string) =>
+      showToast({ icon: "mdi:alert-circle", title, description, variant: "negative" }),
+  };
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -77,7 +93,7 @@ function ToastCard({ toast, onClose }: { toast: ToastItem; onClose: () => void }
       </div>
       <button
         onClick={onClose}
-        className="shrink-0 text-gray-400 hover:text-black transition-colors mt-0.5"
+        className="shrink-0 text-gray-400 hover:text-foreground transition-colors mt-0.5"
       >
         <Icon icon="material-symbols:close" width={14} height={14} />
       </button>

@@ -9,15 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Hover brightens toward white and press sinks toward black — on a dark
+        // canvas `bg-primary/90` would instead dim the accent into the surface.
+        default:
+          "bg-primary text-primary-foreground hover:bg-(--primary-hover) active:bg-(--primary-active) shadow-(--elev-2) hover:shadow-(--elev-2) active:translate-y-px",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background shadow-xs hover:border-primary hover:text-primary hover:bg-(--primary-tint-12)",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-primary",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-(--primary-tint-12) hover:text-primary",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

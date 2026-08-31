@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
+  // Pin the project root to this folder so module/CSS resolution (e.g. the
+  // `@import "tailwindcss"` in globals.css) anchors here even when dev/build is
+  // launched from a parent dir like E:\mine. Without this, Next can infer the
+  // wrong workspace root and fail to resolve packages from node_modules.
+  turbopack: {
+    root: __dirname,
+  },
+  outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
       {

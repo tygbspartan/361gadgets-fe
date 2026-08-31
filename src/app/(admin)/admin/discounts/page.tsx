@@ -42,14 +42,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { isSuper } from "@/constants/roles";
 
 export default function DiscountsPage() {
+  const { toastSuccess, toastError } = useToastHelpers();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
+
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const showOwner = isSuper(role);
 
   const { data, isLoading, error } = useGetDiscountsQuery({
     page,
@@ -74,13 +83,20 @@ export default function DiscountsPage() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (window.confirm(`Are you sure you want to delete discount "${name}"?`)) {
+    if (
+      await confirm({
+        title: "Delete discount",
+        message: `Are you sure you want to delete discount "${name}"?`,
+        confirmText: "Delete",
+        destructive: true,
+      })
+    ) {
       try {
         await deleteDiscount(id).unwrap();
-        alert("Discount deleted successfully!");
+        toastSuccess("Discount deleted successfully!");
       } catch (err) {
         console.error("Failed to delete discount:", err);
-        alert("Failed to delete discount");
+        toastError("Failed to delete discount");
       }
     }
   };
@@ -91,15 +107,16 @@ export default function DiscountsPage() {
     name: string,
   ) => {
     if (
-      window.confirm(
-        `Are you sure you want to ${status ? "activate" : "de-activate"} discount "${name}"?`,
-      )
+      await confirm({
+        title: `${status ? "Activate" : "Deactivate"} discount`,
+        message: `Are you sure you want to ${status ? "activate" : "de-activate"} discount "${name}"?`,
+      })
     ) {
       try {
         await toggleStatus({ id, data: { isActive: !status } }).unwrap();
       } catch (err) {
         console.error("Failed to toggle discount status:", err);
-        alert("Failed to update discount status");
+        toastError("Failed to update discount status");
       }
     }
   };
@@ -233,6 +250,7 @@ export default function DiscountsPage() {
                     <TableHead>Usage</TableHead>
                     <TableHead>Valid Period</TableHead>
                     <TableHead>Status</TableHead>
+                    {showOwner && <TableHead>Owner</TableHead>}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -310,6 +328,15 @@ export default function DiscountsPage() {
                             )}
                           </div>
                         </TableCell>
+                        {showOwner && (
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {discount.ownerId
+                                ? `Vendor #${discount.ownerId}`
+                                : "Platform"}
+                            </span>
+                          </TableCell>
+                        )}
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button

@@ -23,10 +23,12 @@ import {
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import { ROUTES } from "@/constants/routes";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { toastSuccess, toastError } = useToastHelpers();
   const id = params.id as string;
 
   const { data, isLoading, error } = useGetProductByIdQuery(parseInt(id));
@@ -63,10 +65,17 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     try {
-      await deleteProduct(product.id).unwrap();
+      const res = await deleteProduct(product.id).unwrap();
+      if (res.data?.archived) {
+        // Has orders — deactivated instead of deleted.
+        toastSuccess(
+          res.message ||
+            "This product has existing orders, so it was set to Inactive instead of deleted.",
+        );
+      }
       router.push(ROUTES.ADMIN_PRODUCTS);
     } catch (err: any) {
-      alert(err?.data?.message || "Failed to delete product");
+      toastError(err?.data?.message || "Failed to delete product");
     }
   };
 
@@ -296,17 +305,6 @@ export default function ProductDetailPage() {
                     <p className="text-base mt-1">{product.name}</p>
                   </div>
 
-                  {product.shortDescription && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Short Description
-                      </label>
-                      <p className="text-base mt-1">
-                        {product.shortDescription}
-                      </p>
-                    </div>
-                  )}
-
                   {product.longDescription && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">
@@ -409,111 +407,90 @@ export default function ProductDetailPage() {
 
             {/* Details Tab */}
             <TabsContent value="details" className="space-y-4">
-              {getArrayField(product.effectiveFor).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Attributes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Country of Origin
+                    </label>
+                    <p className="text-base mt-1">
+                      {product.countryOfOrigin || "-"}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Color variants + per-color stock */}
+              {product.colors && product.colors.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Effective For</CardTitle>
+                    <CardTitle>Color Variants</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {getArrayField(product.effectiveFor).map(
-                        (item, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="cursor-pointer"
+                    <div className="divide-y">
+                      {[...product.colors]
+                        .sort((a, b) => a.displayOrder - b.displayOrder)
+                        .map((color) => (
+                          <div
+                            key={color.id}
+                            className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                           >
-                            {item}
-                          </Badge>
-                        )
-                      )}
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="h-6 w-6 rounded-full border shrink-0"
+                                style={{
+                                  backgroundColor: color.hexCode || "#e5e7eb",
+                                }}
+                              />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {color.name}
+                                </p>
+                                {color.sku && (
+                                  <p className="text-xs text-muted-foreground">
+                                    SKU: {color.sku}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span
+                              className={`text-sm font-medium ${
+                                color.stockQuantity === 0
+                                  ? "text-primary"
+                                  : color.stockQuantity <=
+                                    product.lowStockThreshold
+                                  ? "text-amber-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              {color.stockQuantity} in stock
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {getArrayField(product.features).length > 0 && (
+              {getArrayField(product.badges).length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Features</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-2">
-                      {getArrayField(product.features).map((feature, index) => (
-                        <li key={index} className="text-sm">
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {getArrayField(product.ingredients).length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ingredients</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm">
-                      {getArrayField(product.ingredients).join(", ")}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {getArrayField(product.howToUse).length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>How To Use</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ol className="list-decimal list-inside space-y-2">
-                      {getArrayField(product.howToUse).map((step, index) => (
-                        <li key={index} className="text-sm">
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  </CardContent>
-                </Card>
-              )}
-
-              {getArrayField(product.cautions).length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Cautions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside space-y-2">
-                      {getArrayField(product.cautions).map((caution, index) => (
-                        <li key={index} className="text-sm text-primary">
-                          {caution}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {getArrayField(product.certifications).length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Certifications</CardTitle>
+                    <CardTitle>Badges</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {getArrayField(product.certifications).map(
-                        (cert, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="cursor-pointer"
-                          >
-                            {cert}
-                          </Badge>
-                        )
-                      )}
+                      {getArrayField(product.badges).map((badge, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="cursor-pointer"
+                        >
+                          {badge}
+                        </Badge>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>

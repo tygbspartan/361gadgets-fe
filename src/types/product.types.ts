@@ -1,10 +1,10 @@
 import { Category } from "@/lib/redux/features/categories/categoriesApi";
 
+// Mirrors the backend Product model (prisma/schema.prisma).
 export interface Product {
   id: number;
   name: string;
   slug: string;
-  shortDescription: string | null;
   longDescription: string | null;
   price: number;
   originalPrice: number | null;
@@ -14,39 +14,56 @@ export interface Product {
   sku: string | null;
   brandId: number | null;
   categoryId: number | null;
+  /** Owning vendor's user id. null = legacy/platform-owned (managed by superadmin). */
+  ownerId: number | null;
   isActive: boolean;
   isFeatured: boolean;
   homepageFeature: boolean;
-  sizes: string[] | null;
-  skinType: string[] | null;
-  skinConcern: string[] | null;
   countryOfOrigin: string | null;
-  effectiveFor: string[] | null;
-  features: string[] | null;
-  certifications: string[] | null;
-  howToUse: string[] | null;
-  ingredients: string[] | null;
-  cautions: string[] | null;
-  metaTitle: string | null; // ADD THIS
-  metaDescription: string | null; // ADD THIS
+  badges: string[] | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
   createdAt: string;
   updatedAt: string;
   brand?: Brand;
   category?: Category;
   images?: ProductImage[];
   specifications?: ProductSpecification[];
+  /** Optional color variants, each with its own stock. Empty = simple product. */
+  colors?: ProductColor[];
   stockStatus?: "in_stock" | "low_stock" | "out_of_stock";
   discountPercentage?: number;
 }
 
+// A saved color variant (returned by the API).
+export interface ProductColor {
+  id: number;
+  name: string;
+  hexCode: string | null;
+  sku: string | null;
+  imageUrl: string | null;
+  stockQuantity: number;
+  displayOrder: number;
+}
+
+// A color variant as sent to the create/update API (no id).
+export interface ProductColorInput {
+  name: string;
+  hexCode?: string;
+  sku?: string;
+  imageUrl?: string;
+  stockQuantity: number;
+  displayOrder?: number;
+}
+
+// Matches the backend CreateProductRequest / UpdateProductRequest contract.
 export interface CreateProductRequest {
   name: string;
-  shortDescription?: string;
   longDescription?: string;
   price: number;
   originalPrice?: number;
   costPrice?: number;
-  stockQuantity: number;
+  stockQuantity?: number;
   lowStockThreshold?: number;
   sku?: string;
   brandId?: number;
@@ -54,18 +71,10 @@ export interface CreateProductRequest {
   isActive?: boolean;
   isFeatured?: boolean;
   homepageFeature?: boolean;
-  sizes?: string[];
-  skinType?: string[];
-  skinConcern?: string[];
+  colors?: ProductColorInput[];
   countryOfOrigin?: string;
-  effectiveFor?: string[];
-  features?: string[];
-  certifications?: string[];
-  howToUse?: string[];
-  ingredients?: string[];
-  cautions?: string[];
-  metaTitle?: string; // ADD THIS
-  metaDescription?: string; // ADD THIS
+  metaTitle?: string;
+  metaDescription?: string;
   images?: {
     imageUrl: string;
     altText?: string;
@@ -104,6 +113,8 @@ export interface Brand {
   logoUrl: string | null;
   websiteUrl: string | null;
   isFeatured: boolean;
+  /** Vendor this brand is reserved for. null = unclaimed. */
+  ownerId?: number | null;
   createdAt: string;
   updatedAt: string;
 }

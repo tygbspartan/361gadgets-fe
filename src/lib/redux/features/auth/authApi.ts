@@ -13,6 +13,9 @@ import {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   MessageResponse,
+  ChangePasswordRequest,
+  UpdateProfileRequest,
+  UpdateProfileResponse,
 } from "@/types/auth.types";
 import { baseQueryWithAuth } from "../../baseQuery";
 
@@ -82,6 +85,25 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+
+    // Self-service: update own profile (name / phone / company fields)
+    updateProfile: builder.mutation<UpdateProfileResponse, UpdateProfileRequest>({
+      query: (data) => ({
+        url: API_ENDPOINTS.UPDATE_PROFILE,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    // Self-service: change own password (requires current password)
+    changePassword: builder.mutation<MessageResponse, ChangePasswordRequest>({
+      query: (data) => ({
+        url: API_ENDPOINTS.CHANGE_PASSWORD,
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -94,4 +116,6 @@ export const {
   useResendVerificationMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
 } = authApi;

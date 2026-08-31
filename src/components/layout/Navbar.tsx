@@ -66,6 +66,30 @@ export default function Navbar() {
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [openCat, setOpenCat] = useState<number | null>(null);
+  /*
+   * Which category the mega panel is *rendering*. Distinct from openCat because
+   * there is now a single shared panel: on close, openCat goes null but the
+   * content has to stay mounted for the slide-up to have anything to animate.
+   * shownCat therefore only ever advances, never clears.
+   */
+  const [shownCat, setShownCat] = useState<number | null>(null);
+
+  /*
+   * shownCat only advances to categories that have something to render. Moving
+   * onto a childless one therefore leaves the previous content in place while
+   * the panel slides away, instead of blanking it mid-animation.
+   */
+  const openMenu = (cat: Category) => {
+    if (cat.children && cat.children.length > 0) setShownCat(cat.id);
+    setOpenCat(cat.id);
+  };
+
+  const shownCategory = categories.find((c) => c.id === shownCat);
+  /* Driven by the *hovered* category, not the rendered one: hovering something
+     childless must close the panel even though old content is still mounted. */
+  const megaOpen =
+    (categories.find((c) => c.id === openCat)?.children?.length ?? 0) > 0;
+
   const catBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -147,7 +171,9 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white sticky top-0 z-50 mb-12.5">
+      {/* No bottom border: it rendered as a 1px #e7e7e7 line between the black
+          category bar and the black hero. The category strip is its own edge. */}
+      <nav className="glass sticky top-0 z-50 mb-12.5">
 
         {/* ── Top Bar ── 91px via .nav-top-bar */}
         <div className="nav-top-bar">
@@ -287,7 +313,7 @@ export default function Navbar() {
                 >
                   <Icon icon="mdi:heart-outline" className="w-5.5 h-5.5 lg:w-6 lg:h-6" />
                   {wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-white text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
                       {wishlistCount > 9 ? "9+" : wishlistCount}
                     </span>
                   )}
@@ -302,7 +328,7 @@ export default function Navbar() {
                 >
                   <Icon icon="mdi:shopping-outline" className="w-5.5 h-5.5 lg:w-6 lg:h-6" />
                   {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-white text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
                       {cartItemCount > 9 ? "9+" : cartItemCount}
                     </span>
                   )}
@@ -354,82 +380,122 @@ export default function Navbar() {
         </div>
 
         {/* ── Bottom Nav — Categories ── desktop only */}
-        <div ref={catBarRef} className="hidden lg:block bg-white navbar-shadow">
+        {/* The one dark band in the chrome. Ink is inverted inside it, so
+            `primary` (near-black) must not be used for text or the underline. */}
+        {/* `relative` anchors the full-bleed mega panel below; the leave handler
+            closes it once the pointer exits the bar *and* the panel, both of
+            which live inside this element. */}
+        <div
+          ref={catBarRef}
+          onMouseLeave={() => setOpenCat(null)}
+          className="relative hidden lg:block bg-(--chrome-dark) navbar-shadow"
+        >
           <div className="page-wrapper">
             <div className="flex justify-center h-15.5 gap-5">
-              {categories.map((level1, idx) => {
+              {categories.map((level1) => {
                 const isActive = isCategoryActive(level1, activeCategorySlug);
-                const n = categories.length;
-                // Left third drops right (left-0), right third drops left
-                // (right-0), middle third stays centered.
-                const align =
-                  idx < n / 3
-                    ? "left-0"
-                    : idx >= (2 * n) / 3
-                    ? "right-0"
-                    : "left-1/2 -translate-x-1/2";
+                const isOpen = openCat === level1.id;
                 return (
-                <div key={level1.id} className="relative group nav-cat-item">
+                <div
+                  key={level1.id}
+                  onMouseEnter={() => openMenu(level1)}
+                  className="relative group nav-cat-item"
+                >
 
                   {/* Wrapper so underline sizes to text width, not full item width.
                       Clicking toggles the menu (works on touch devices). */}
                   <div
                     onClick={() =>
-                      setOpenCat(openCat === level1.id ? null : level1.id)
+                      isOpen ? setOpenCat(null) : openMenu(level1)
                     }
                     className="relative cursor-pointer"
                   >
-                    <span className={`font-inter font-medium text-sm leading-none tracking-normal transition-colors uppercase ${isActive || openCat === level1.id ? "text-black" : "text-[#484848] group-hover:text-black"}`}>
+                    {/* All labels are white; the underline alone carries
+                        active/hover state. */}
+                    <span className="font-inter font-medium text-sm leading-none tracking-normal uppercase text-white">
                       {level1.name}
                     </span>
                     {/* Underline: active/open stays visible; inactive emerges left-to-right on hover */}
-                    <div className={`absolute -bottom-1.5 -left-2.5 -right-2.5 h-0.5 bg-primary origin-left transition-transform duration-300 ${isActive || openCat === level1.id ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
+                    <div className={`absolute -bottom-1.5 -left-2.5 -right-2.5 h-0.5 bg-white origin-left transition-transform duration-300 ${isActive || isOpen ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
                   </div>
 
-                  {/* Mega dropdown */}
-                  {level1.children && level1.children.length > 0 && (
-                    <div
-                      onClick={() => setOpenCat(null)}
-                      className={`absolute ${align} top-full transition-all duration-200 pt-1 z-50 ${
-                        openCat === level1.id
-                          ? "opacity-100 visible"
-                          : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
-                      }`}
-                    >
-                      <div className="bg-white shadow-lg rounded-md border border-gray-200 w-160 p-6 max-h-[calc(100vh-180px)] overflow-y-auto search-dropdown">
-                        <div className="grid grid-cols-2 gap-6">
-                          {level1.children.map((level2) => (
-                            <div key={level2.id} className="space-y-3">
-                              <Link
-                                href={`${ROUTES.PRODUCTS}?category=${level2.slug}`}
-                                className="font-semibold text-sm text-black flex items-center gap-1 hover:text-primary transition-colors"
-                              >
-                                {level2.name}
-                                <ChevronRight className="h-3 w-3" />
-                              </Link>
-                              {level2.children && level2.children.length > 0 && (
-                                <ul className="space-y-2 ml-2">
-                                  {level2.children.map((level3) => (
-                                    <li key={level3.id}>
-                                      <Link
-                                        href={`${ROUTES.PRODUCTS}?category=${level3.slug}`}
-                                        className="text-sm text-gray-600 hover:text-primary transition-colors block"
-                                      >
-                                        {level3.name}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
               })}
+            </div>
+          </div>
+
+          {/*
+           * Full-bleed mega panel — one shared instance, anchored to the bar
+           * rather than to any single item, which is what lets it span the
+           * viewport edge to edge.
+           *
+           * The outer box clips; the panel inside starts translated fully above
+           * it and slides down, so it unrolls out from under the bar and rolls
+           * back up on exit. It is never unmounted or set `invisible` — either
+           * would cut the closing half of the animation off instantly, since
+           * visibility is not interpolable.
+           *
+           * The clip box still occupies its area while closed, hence
+           * pointer-events-none so it cannot swallow clicks on the hero below.
+           */}
+          <div
+            className={`absolute inset-x-0 top-full z-50 overflow-hidden ${
+              megaOpen ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+          >
+            <div
+              onClick={() => setOpenCat(null)}
+              className={`max-h-[calc(100vh-var(--nav-h)-2rem)] overflow-y-auto border-t border-white/10 bg-(--chrome-dark) transition-transform duration-300 ease-out ${
+                megaOpen ? "translate-y-0" : "-translate-y-full"
+              }`}
+            >
+              <div className="page-wrapper py-11">
+                {/*
+                 * Extra inset on top of .page-wrapper rather than replacing it:
+                 * the wrapper keeps the panel aligned with the rest of the page,
+                 * and this adds the additional breathing room. It has to sit on
+                 * a child — .page-wrapper is unlayered CSS, so it would beat a
+                 * px-* utility applied to the same element.
+                 */}
+                <div className="px-4 xl:px-10">
+                  {/*
+                   * Flex-wrap rather than a grid: fr columns always stretch to
+                   * fill, so a category with fewer children than columns left a
+                   * gap on the right. Fixed-width items that wrap can be
+                   * centred as a group, and short and long categories both sit
+                   * in the middle. Text stays left-aligned inside each column —
+                   * ragged-left lists are harder to scan.
+                   */}
+                  <div className="flex flex-wrap justify-center gap-x-12 gap-y-9">
+                    {shownCategory?.children?.map((level2) => (
+                      <div key={level2.id} className="w-48">
+                        <Link
+                          href={`${ROUTES.PRODUCTS}?category=${level2.slug}`}
+                          className="group/col inline-flex items-center gap-1.5 text-[15px] font-semibold uppercase tracking-[0.06em] text-white transition-colors hover:text-white/60"
+                        >
+                          {level2.name}
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover/col:translate-x-0.5" />
+                        </Link>
+                        {level2.children && level2.children.length > 0 && (
+                          <ul className="mt-4 space-y-3">
+                            {level2.children.map((level3) => (
+                              <li key={level3.id}>
+                                <Link
+                                  href={`${ROUTES.PRODUCTS}?category=${level3.slug}`}
+                                  className="block text-[14px] text-white/55 transition-colors hover:text-white"
+                                >
+                                  {level3.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

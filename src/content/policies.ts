@@ -2,7 +2,7 @@ export const policiesContent: { key: string; value: string }[] = [
   {
     key: "Privacy Policy",
     value:
-      "Daily Dose is committed to protecting your personal information. This policy outlines what data we collect, how we use it, and your rights regarding that data. By using our platform, you consent to the collection and use of information in accordance with this policy. We do not sell your personal data to third parties.",
+      "361 Gadgets is committed to protecting your personal information. This policy outlines what data we collect, how we use it, and your rights regarding that data. By using our platform, you consent to the collection and use of information in accordance with this policy. We do not sell your personal data to third parties.",
   },
   {
     key: "Data Collection",
@@ -30,19 +30,9 @@ export const policiesContent: { key: string; value: string }[] = [
       "We may share your information with trusted third-party service providers who assist in operating our website and conducting our business, including payment processors, delivery partners, and analytics providers. These parties are contractually obligated to keep your information confidential and may not use it for any other purpose.",
   },
   {
-    key: "Medical Disclaimer",
-    value:
-      "Products sold on this platform are not intended to diagnose, treat, cure, or prevent any disease unless explicitly stated. The information provided on product pages is for general informational purposes only and does not constitute medical advice. Always consult a qualified healthcare professional before starting any new supplement or medication.",
-  },
-  {
-    key: "Prescription Products",
-    value:
-      "Certain products available on our platform may require a valid prescription from a licensed medical practitioner. By purchasing such products, you confirm that you hold a valid prescription and that the purchase is for personal use only. We reserve the right to verify prescriptions and decline orders that do not meet regulatory requirements.",
-  },
-  {
     key: "Age Requirement",
     value:
-      "You must be at least 18 years of age to create an account or make a purchase on Daily Dose. By using our services, you represent and warrant that you are at least 18 years old. If we become aware that a user is under the required age, we will terminate their account and reverse any associated transactions.",
+      "You must be at least 18 years of age to create an account or make a purchase on 361 Gadgets. By using our services, you represent and warrant that you are at least 18 years old. If we become aware that a user is under the required age, we will terminate their account and reverse any associated transactions.",
   },
   {
     key: "Updates to Policy",

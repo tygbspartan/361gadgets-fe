@@ -15,6 +15,9 @@ export interface Discount {
   usageLimit: number | null;
   usedCount: number;
 
+  // Ownership — the vendor (admin) who created this promo. Null = platform-wide (superadmin).
+  ownerId: number | null;
+
   createdAt: string;
   updatedAt: string;
 }

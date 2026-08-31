@@ -7,12 +7,12 @@ import { BRAND } from "@/config/brand";
 const headingClass =
   "font-medium text-[14px] lg:text-[16px] leading-none tracking-[0.01em] text-white";
 const linkClass =
-  "font-medium text-[14px] lg:text-[16px] leading-none tracking-[0.01em] text-[#747373] transition-colors hover:text-white";
+  "font-medium text-[14px] lg:text-[16px] leading-none tracking-[0.01em] text-gray-400 transition-colors hover:text-white";
 
 const socialLinks = [
-  { label: "Instagram", href: "https://www.instagram.com/dailydose_np/" },
-  { label: "Tiktok", href: "https://www.tiktok.com/@dailydose.np" },
-  { label: "Facebook", href: "https://www.facebook.com/np.dailydose" },
+  { label: "Instagram", href: "https://www.instagram.com/361gadgets_np/" },
+  { label: "Tiktok", href: "https://www.tiktok.com/@361gadgets.np" },
+  { label: "Facebook", href: "https://www.facebook.com/np.361gadgets" },
 ];
 
 const legalLinks = [
@@ -22,10 +22,13 @@ const legalLinks = [
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: "#191919" }} className="text-white">
+    /* Deliberately the one dark surface on a light site — it anchors the page
+       and is where BRAND.logo.secondary (the white wordmark) belongs. Ink here
+       is inverted, so `primary` must not be used for text inside it. */
+    <footer className="bg-(--chrome-dark) text-white">
       <div className="page-wrapper pt-12 pb-8">
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Daily Dose info */}
+          {/* 361 Gadgets info */}
           <div className="max-w-md">
             <Image
               src={BRAND.logo.secondary}
@@ -35,7 +38,7 @@ export default function Footer() {
               priority={false}
               className="w-29.5 h-auto lg:w-auto lg:h-16.25"
             />
-            <p className="mt-2.5 font-normal text-[14px] lg:text-[16px] leading-7.5 text-[#747373]">
+            <p className="mt-2.5 font-normal text-[14px] lg:text-[16px] leading-7.5 text-gray-400">
               {BRAND.description}
             </p>
           </div>
@@ -86,8 +89,8 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="mailto:dailydose.np@gmail.com" className={linkClass}>
-                    dailydose.np@gmail.com
+                  <a href="mailto:361gadgets.np@gmail.com" className={linkClass}>
+                    361gadgets.np@gmail.com
                   </a>
                 </li>
               </ul>
@@ -99,11 +102,11 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="page-wrapper pb-3.75 flex flex-col lg:flex-row lg:justify-center lg:gap-1">
         <p className="text-center font-normal text-[12px] leading-none text-white">
-          © 2026 Daily Dose. All rights reserved.
+          © 2026 361 Gadgets. All rights reserved.
         </p>
         <p className="text-center font-normal text-[12px] leading-none text-white mt-1 lg:mt-0">
           Developed by{" "}
-          <span style={{ color: "var(--color-primary)" }}>Fibi Space</span>.
+          <span className="text-white">Fibi Space</span>.
         </p>
       </div>
     </footer>

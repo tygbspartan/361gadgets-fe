@@ -39,13 +39,6 @@ export const reviewsApi = createApi({
       providesTags: ["Reviews"],
     }),
 
-    // Get single review (Admin)
-    getReview: builder.query<Review, number>({
-      query: (id) => `/reviews/admin/${id}`,
-      transformResponse: (response: SingleReviewApiResponse) => response.data,
-      providesTags: (result, error, id) => [{ type: "Review", id }],
-    }),
-
     // Update review (Admin - approve/reject, add notes)
     updateReview: builder.mutation<
       Review,
@@ -182,7 +175,6 @@ export const reviewsApi = createApi({
 export const {
   // Admin hooks
   useGetReviewsQuery,
-  useGetReviewQuery,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
 

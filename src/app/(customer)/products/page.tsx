@@ -23,8 +23,6 @@ function ProductListingContent() {
   const categorySlug = searchParams.get("category");
   const brandSlug = searchParams.get("brand");
   const searchQuery = searchParams.get("search");
-  const skinType = searchParams.get("skinType");
-  const skinConcern = searchParams.get("skinConcern");
   const sortBy = searchParams.get("sortBy") || "createdAt";
   const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
 
@@ -43,8 +41,6 @@ function ProductListingContent() {
     maxPrice,
     sortBy,
     sortOrder,
-    skinType: skinType || undefined,
-    skinConcern: skinConcern || undefined,
     isActive: true,
   });
 
@@ -53,7 +49,7 @@ function ProductListingContent() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [categorySlug, brandSlug, searchQuery, skinType, skinConcern, minPrice, maxPrice, sortBy, sortOrder]);
+  }, [categorySlug, brandSlug, searchQuery, minPrice, maxPrice, sortBy, sortOrder]);
 
   useEffect(() => {
     dispatch(setActiveCategorySlug(categorySlug));
@@ -175,7 +171,7 @@ function ProductListingContent() {
                 }
 
                 const navClass =
-                  "px-3 py-2 flex items-center gap-1 border border-[#E9E9E9] rounded-sm font-inter font-normal text-[14px] leading-5 text-[#313131] hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+                  "px-3 py-2 flex items-center gap-1 border border-[#E9E9E9] rounded-sm font-inter font-normal text-[14px] leading-5 text-[#313131] hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
                 return (
                   <div className="mt-12 flex justify-end">
@@ -203,8 +199,8 @@ function ProductListingContent() {
                             onClick={() => handlePageChange(item)}
                             className={`px-3 py-2 flex items-center justify-center border rounded-sm font-inter text-[14px] leading-5 transition-colors ${
                               item === cur
-                                ? "bg-black text-white border-black font-bold"
-                                : "border-[#E9E9E9] text-[#313131] hover:border-black font-normal"
+                                ? "bg-primary text-primary-foreground border-primary font-bold"
+                                : "border-[#E9E9E9] text-[#313131] hover:border-primary hover:text-primary font-normal"
                             }`}
                           >
                             {item}

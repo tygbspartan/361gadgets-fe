@@ -14,14 +14,37 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+/** Pulls the API's `message` string out of an error payload, if present. */
+function errorMessage(data: unknown): string {
+  if (data && typeof data === "object" && "message" in data) {
+    const msg = (data as { message?: unknown }).message;
+    if (typeof msg === "string") return msg;
+  }
+  return "";
+}
+
 export const baseQueryWithAuth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
-  if (result.error?.status === 401) {
-    api.dispatch(logout());
+
+  if (result.error) {
+    const { status, data } = result.error;
+
+    // 401 → token missing/expired: drop the session.
+    if (status === 401) {
+      api.dispatch(logout());
+    }
+
+    // 403 → could be "wrong role" (leave session intact) OR a deactivated
+    // account (instant access revocation — drop the session). The backend
+    // sends "Your account has been deactivated." for the latter.
+    if (status === 403 && /deactivat/i.test(errorMessage(data))) {
+      api.dispatch(logout());
+    }
   }
+
   return result;
 };

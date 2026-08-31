@@ -33,7 +33,7 @@ export default function EmptyState({
       {buttonText && (
         <Link
           href={ROUTES.PRODUCTS}
-          className="mt-5 inline-flex items-center gap-2 bg-black text-white font-inter font-medium text-[14px] leading-none px-6 py-2.5 rounded-[3px] hover:opacity-80 transition-opacity"
+          className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground font-inter font-medium text-[14px] leading-none px-6 py-2.5 rounded-[3px] hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
         >
           {buttonText}
           <ArrowRight className="w-4 h-4" />

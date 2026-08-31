@@ -23,11 +23,19 @@ import {
   XCircle,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { isSuper } from "@/constants/roles";
 
 export default function CategoryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = parseInt(params.id as string);
+
+  // Vendors can view but not edit/delete categories.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canManage = isSuper(role);
+  const { toastError } = useToastHelpers();
 
   const { data, isLoading, error } = useGetCategoryByIdQuery(id);
   const { data: allCategoriesData } = useGetCategoriesQuery();
@@ -56,7 +64,7 @@ export default function CategoryDetailPage() {
       await deleteCategory(category.id).unwrap();
       router.push(ROUTES.ADMIN_CATEGORIES);
     } catch (err: any) {
-      alert(err?.data?.message || "Failed to delete category");
+      toastError(err?.data?.message || "Failed to delete category");
     }
   };
 
@@ -102,25 +110,27 @@ export default function CategoryDetailPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Link href={`${ROUTES.ADMIN_CATEGORIES}/${category.id}/edit`}>
+        {/* Action Buttons — superadmin only */}
+        {canManage && (
+          <div className="flex gap-2">
+            <Link href={`${ROUTES.ADMIN_CATEGORIES}/${category.id}/edit`}>
+              <Button
+                variant="outline"
+                className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
             <Button
-              variant="outline"
-              className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </Button>
-          </Link>
-          <Button
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation */}

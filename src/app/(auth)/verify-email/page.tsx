@@ -12,7 +12,7 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 
 const INPUT =
-  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-black transition-colors";
+  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-primary transition-colors";
 const LABEL = "font-montserrat font-normal text-[14px] leading-tight text-black";
 
 function VerifyEmailContent() {
@@ -80,7 +80,7 @@ function VerifyEmailContent() {
           </div>
           <Link
             href={ROUTES.LOGIN}
-            className="mt-7.5 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="mt-7.5 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
           >
             Back to Sign In
           </Link>
@@ -128,7 +128,7 @@ function VerifyEmailContent() {
             type="button"
             onClick={() => handleVerify()}
             disabled={isVerifying || !token}
-            className="mt-6.25 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            className="mt-6.25 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isVerifying ? (
               <><Loader2 className="w-4 h-4 animate-spin" />Verifying…</>
@@ -142,7 +142,7 @@ function VerifyEmailContent() {
             type="button"
             onClick={handleResend}
             disabled={isResending}
-            className="mt-3.75 w-full h-11 border border-black text-black font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="mt-3.75 w-full h-11 border border-primary text-primary font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isResending ? (
               <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>

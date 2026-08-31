@@ -8,10 +8,7 @@ import SectionTitle from "@/components/home/SectionTitle";
 import Spinner from "@/components/ui/Spinner";
 import { ROUTES } from "@/constants/routes";
 
-const TARGET_NAMES = ["Cleansers", "Toners", "Moisturizers", "Sunscreen", "Facewash"];
-
-// Normalise: lowercase + strip whitespace so "Face Wash" matches "Facewash"
-const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+const MAX_TILES = 5;
 
 function CategoryCard({ category }: { category: Category }) {
   const { data } = useGetProductsQuery({
@@ -27,23 +24,28 @@ function CategoryCard({ category }: { category: Category }) {
 
   return (
     <Link href={`${ROUTES.PRODUCTS}?category=${category.slug}`} className="block w-full">
-      <div className="relative w-full aspect-[317/359] rounded-[20px] border border-[#E0E0E0] shadow-[2px_2px_4px_0px_#00000026] overflow-hidden">
+      <div className="surface-card hover-lift group relative w-full aspect-317/359 rounded-2xl overflow-hidden">
         {primaryImg ? (
           <Image
             src={primaryImg}
             alt={category.name}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             unoptimized
           />
         ) : (
-          <div className="absolute inset-0 bg-gray-200" />
+          <div className="absolute inset-0 bg-gray-100" />
         )}
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/40" />
-        {/* Category name */}
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <span className="font-montserrat font-semibold text-[16px] sm:text-[20px] lg:text-[24px] leading-none text-white uppercase text-center">
+
+        {/* Scrim: heavier at the base so the label stays legible over any shot. */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/25 transition-opacity duration-300 group-hover:from-black/75" />
+
+        {/* Floor line that grows in on hover. White, not primary: this sits on
+            the dark scrim, where near-black ink would disappear. */}
+        <div className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-500 group-hover:scale-x-100" />
+
+        <div className="absolute inset-0 flex items-end justify-center p-4">
+          <span className="font-montserrat font-semibold text-[16px] sm:text-[20px] lg:text-[22px] leading-tight text-white uppercase text-center tracking-[0.04em] transition-colors duration-300 group-hover:text-gray-300">
             {category.name}
           </span>
         </div>
@@ -57,12 +59,14 @@ export default function ShopByCategory() {
 
   if (isLoading) return <Spinner />;
 
-  const allCats = categoriesData?.data ?? [];
-  const categories = TARGET_NAMES
-    .map((name) =>
-      allCats.find((c) => norm(c.name) === norm(name))
-    )
-    .filter(Boolean) as Category[];
+  /*
+   * Derived from the catalogue rather than a hardcoded name list, so the tiles
+   * always reflect real categories. Top-level only, in admin display order.
+   */
+  const categories = (categoriesData?.data ?? [])
+    .filter((c) => c.isActive && c.parentId === null)
+    .sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name))
+    .slice(0, MAX_TILES);
 
   if (categories.length === 0) return null;
 

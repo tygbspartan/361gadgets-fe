@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { Loader2 } from "lucide-react";
@@ -14,8 +14,9 @@ import {
 } from "@/lib/redux/features/checkout/checkoutApi";
 import { ShippingInfo } from "@/types/checkout.types";
 import { ROUTES } from "@/constants/routes";
-import { useToast } from "@/components/ui/ToastStack";
+import { useToast, useToastHelpers } from "@/components/ui/ToastStack";
 import { KATHMANDU_VALLEY_CITIES, SHIPPING_COSTS } from "@/constants/checkout";
+import { useGetPublicSettingsQuery } from "@/lib/redux/features/settings/settingsApi";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import ShippingDetails from "@/components/checkout/ShippingDetails";
 
@@ -27,7 +28,13 @@ export default function CheckoutPage() {
   const { items: cartItems, isLoading: cartLoading, isGuest } = useCart();
 
   const [checkout, { isLoading: isCheckingOut }] = useCheckoutMutation();
+
+  // Stable idempotency key for this checkout attempt. Reused across retries
+  // (double-click / network error) so the order is never created twice, and
+  // reset only after a confirmed success so the next order gets a fresh key.
+  const idempotencyKeyRef = useRef<string | null>(null);
   const { showToast } = useToast();
+  const { toastError } = useToastHelpers();
   const [validateDiscount, { isLoading: isValidatingDiscount }] = useValidateDiscountMutation();
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -76,12 +83,24 @@ export default function CheckoutPage() {
     return sum + price * item.quantity;
   }, 0);
 
+  // Live shipping config from the backend so the shown total matches what's
+  // charged. Falls back to the mirrored constants until it loads / if it fails.
+  const { data: publicSettings } = useGetPublicSettingsQuery();
+  const insideValleyCost =
+    publicSettings?.shippingInsideValley ?? SHIPPING_COSTS.INSIDE_VALLEY;
+  const outsideValleyCost =
+    publicSettings?.shippingOutsideValley ?? SHIPPING_COSTS.OUTSIDE_VALLEY;
+  const freeShippingThreshold =
+    publicSettings?.freeShippingThreshold ?? SHIPPING_COSTS.FREE_SHIPPING_THRESHOLD;
+
   const shippingCost = (() => {
+    // Mirrors the backend: free above the threshold, else valley-based rate.
+    if (subtotal >= freeShippingThreshold) return 0;
     const city = shippingInfo.city.toLowerCase().trim();
     const inValley = KATHMANDU_VALLEY_CITIES.some(
       (c) => city.includes(c) || c.includes(city)
     );
-    return inValley ? SHIPPING_COSTS.INSIDE_VALLEY : SHIPPING_COSTS.OUTSIDE_VALLEY;
+    return inValley ? insideValleyCost : outsideValleyCost;
   })();
 
   const discountAmount = appliedDiscount?.discountAmount ?? 0;
@@ -133,17 +152,22 @@ export default function CheckoutPage() {
   const handleCheckout = async () => {
     for (const item of checkoutItems) {
       if (!item.product) continue;
-      if (item.product.stockQuantity === 0) { alert(`${item.product.name} is out of stock`); return; }
+      if (item.product.stockQuantity === 0) { toastError(`${item.product.name} is out of stock`); return; }
       if (item.quantity > item.product.stockQuantity) {
-        alert(`Only ${item.product.stockQuantity} units of ${item.product.name} available`);
+        toastError(`Only ${item.product.stockQuantity} units of ${item.product.name} available`);
         return;
       }
     }
     if (!checkoutItems.length) return;
-    if (!validateForm()) { alert("Please fill in all required fields correctly"); return; }
+    if (!validateForm()) { toastError("Please fill in all required fields correctly"); return; }
+
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
 
     try {
       const result = await checkout({
+        idempotencyKey: idempotencyKeyRef.current,
         shippingInfo,
         paymentMethod,
         transactionNumber: paymentMethod === "qr" ? transactionNumber : undefined,
@@ -153,9 +177,16 @@ export default function CheckoutPage() {
         cartItemIds:
           !isGuest && cartItemIds && cartItemIds.length > 0 ? cartItemIds : undefined,
         items: isGuest
-          ? checkoutItems.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+          ? checkoutItems.map((i) => ({
+              productId: i.productId,
+              quantity: i.quantity,
+              colorId: i.colorId ?? undefined,
+            }))
           : undefined,
       }).unwrap();
+
+      // Order confirmed — retire this key so a future checkout starts fresh.
+      idempotencyKeyRef.current = null;
 
       // Guest cart lives client-side, so clear the items we just ordered.
       if (isGuest) {
@@ -173,7 +204,7 @@ export default function CheckoutPage() {
         `/order-confirmation/${result.data.orderNumber}${isGuest ? `?email=${email}` : ""}`
       );
     } catch (error: any) {
-      alert(error?.data?.message || "Failed to place order. Please try again.");
+      toastError(error?.data?.message || "Failed to place order. Please try again.");
     }
   };
 
@@ -195,7 +226,7 @@ export default function CheckoutPage() {
         <p className="text-gray-600 mb-6">Add some products to checkout</p>
         <Link
           href={ROUTES.PRODUCTS}
-          className="bg-black text-white font-inter font-medium text-sm px-6 py-3 rounded-[3px] hover:opacity-80 transition-opacity"
+          className="bg-primary text-primary-foreground font-inter font-medium text-sm px-6 py-3 rounded-[3px] hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
         >
           Browse Products
         </Link>

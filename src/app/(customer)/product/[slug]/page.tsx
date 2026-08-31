@@ -12,6 +12,7 @@ import { useGetUserOrdersQuery } from "@/lib/redux/features/orders/ordersApi";
 import { ROUTES } from "@/constants/routes";
 import Spinner from "@/components/ui/Spinner";
 import ProductDetails from "@/components/productDetailPage/ProductDetails";
+import ProductSpecifications from "@/components/productDetailPage/ProductSpecifications";
 import SimilarProducts from "@/components/productDetailPage/SimilarProducts";
 import ProductReviewsList from "@/components/productDetailPage/ProductReviewsList";
 import WriteReview from "@/components/productDetailPage/WriteReview";
@@ -73,7 +74,7 @@ function ProductDetailContent() {
         <p className="text-gray-600 mb-6">The product you&apos;re looking for doesn&apos;t exist.</p>
         <Link
           href={ROUTES.PRODUCTS}
-          className="inline-block bg-black text-white font-inter font-medium px-8 py-3 rounded-[3px]"
+          className="inline-block bg-primary text-primary-foreground font-inter font-medium px-8 py-3 rounded-[3px] hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
         >
           Browse All Products
         </Link>
@@ -90,6 +91,8 @@ function ProductDetailContent() {
         product={product}
         summary={reviewsData?.summary}
       />
+
+      <ProductSpecifications product={product} />
 
       <SimilarProducts
         products={fbtProducts}

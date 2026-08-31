@@ -29,6 +29,20 @@ export const cartApi = createApi({
       invalidatesTags: ["Cart"],
     }),
 
+    // Merge a guest cart into the user's cart in one call (after login/register).
+    // The backend caps quantities at available stock and skips unavailable items.
+    mergeCart: builder.mutation<
+      CartApiResponse,
+      { items: { productId: number; quantity: number; colorId?: number }[] }
+    >({
+      query: (body) => ({
+        url: "/cart/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Cart"],
+    }),
+
     // Update cart item quantity - UPDATED
     updateCartItem: builder.mutation<
       CartApiResponse,
@@ -65,6 +79,7 @@ export const cartApi = createApi({
 export const {
   useGetCartQuery,
   useAddToCartMutation,
+  useMergeCartMutation,
   useUpdateCartItemMutation,
   useRemoveFromCartMutation,
   useClearCartMutation,

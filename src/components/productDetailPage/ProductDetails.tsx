@@ -29,6 +29,18 @@ export default function ProductDetails({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
+  // Color variants (optional). Default to the first in-stock color.
+  const colors = product.colors ?? [];
+  const hasColors = colors.length > 0;
+  const [selectedColorId, setSelectedColorId] = useState<number | null>(
+    hasColors
+      ? (colors.find((c) => c.stockQuantity > 0) ?? colors[0]).id
+      : null
+  );
+  const selectedColor = hasColors
+    ? colors.find((c) => c.id === selectedColorId) ?? null
+    : null;
+
   const images =
     product.images && product.images.length > 0
       ? [...product.images].sort((a, b) => {
@@ -44,19 +56,27 @@ export default function ProductDetails({
     product.originalPrice != null && product.originalPrice > product.price;
   const saveAmount = hasDiscount ? product.originalPrice! - product.price : 0;
 
-  const isOOS = product.stockQuantity === 0;
-  const isLowStock = !isOOS && product.stockQuantity <= product.lowStockThreshold;
+  // Stock reflects the selected color when the product has color variants.
+  const effectiveStock = hasColors
+    ? selectedColor?.stockQuantity ?? 0
+    : product.stockQuantity;
+  const isOOS = effectiveStock === 0;
+  const isLowStock = !isOOS && effectiveStock <= product.lowStockThreshold;
   const stockLabel = isOOS
     ? "Out of Stock"
     : isLowStock
-    ? `Low Stock — Only ${product.stockQuantity} left`
+    ? `Low Stock — Only ${effectiveStock} left`
     : "In Stock";
 
   const handleAddToCart = async () => {
+    if (hasColors && !selectedColor) {
+      showToast({ icon: "hugeicons:alert-02", title: "Please select a color", variant: "negative" });
+      return;
+    }
     const rect = mainImgRef.current?.getBoundingClientRect();
     if (rect && mainImage) flyToCart(rect, mainImage.imageUrl);
     try {
-      await addToCart(product, quantity);
+      await addToCart(product, quantity, selectedColor?.id);
       setQuantity(1);
       showToast({ icon: "hugeicons:shopping-cart-check-in-02", title: "Added to Cart!", variant: "positive" });
     } catch {}
@@ -88,7 +108,7 @@ export default function ProductDetails({
       <div className="w-full lg:w-[60%] flex flex-col lg:flex-row gap-3">
 
         {/* Main image — top on mobile, right on desktop */}
-        <div ref={mainImgRef} className="order-1 lg:order-2 w-full lg:flex-1 relative aspect-square overflow-hidden bg-[#F8F8F8]">
+        <div ref={mainImgRef} className="order-1 lg:order-2 w-full lg:flex-1 relative aspect-square overflow-hidden rounded-[10px] bg-[#F8F8F8] shadow-(--elev-2)">
           {mainImage ? (
             <Image
               src={mainImage.imageUrl}
@@ -152,7 +172,7 @@ export default function ProductDetails({
               Rs. {product.price.toLocaleString()}
             </span>
             {hasDiscount && (
-              <span className="bg-[#15792B] rounded-xs text-white font-inter font-semibold text-[14px] leading-5.5 text-center px-2">
+              <span className="rounded-md bg-green-700 text-white font-inter font-semibold text-[14px] leading-5.5 text-center px-2">
                 Save Rs. {saveAmount.toLocaleString()}
               </span>
             )}
@@ -188,8 +208,48 @@ export default function ProductDetails({
           </div>
         </div>
 
+        {/* Color selector (only when the product has color variants) */}
+        {hasColors && (
+          <div className="flex flex-col gap-2.5 mt-5 lg:mt-4">
+            <span className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-[#4B4B4B]">
+              Color:{" "}
+              <span className="font-medium text-black">
+                {selectedColor?.name ?? "Select"}
+              </span>
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {colors.map((color) => {
+                const oos = color.stockQuantity === 0;
+                const active = color.id === selectedColorId;
+                return (
+                  <button
+                    key={color.id}
+                    type="button"
+                    title={oos ? `${color.name} — out of stock` : color.name}
+                    onClick={() => {
+                      setSelectedColorId(color.id);
+                      setQuantity(1);
+                    }}
+                    disabled={oos}
+                    className={`relative h-9 w-9 rounded-full border-2 transition-all ${
+                      active ? "border-black" : "border-[#D4D4D4]"
+                    } ${oos ? "opacity-40 cursor-not-allowed" : "hover:border-primary"}`}
+                    style={{ backgroundColor: color.hexCode || "#e5e7eb" }}
+                  >
+                    {oos && (
+                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black/60">
+                        ✕
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Select Quantity + stepper + add to cart */}
-        <div className="flex flex-col gap-2.5 mt-5 lg:mt-0">
+        <div className="flex flex-col gap-2.5 mt-5 lg:mt-4">
           <span className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-[#4B4B4B]">
             Select Quantity
           </span>
@@ -206,8 +266,8 @@ export default function ProductDetails({
                 {quantity}
               </div>
               <button
-                onClick={() => setQuantity((q) => Math.min(product.stockQuantity, q + 1))}
-                disabled={isOOS || quantity >= product.stockQuantity}
+                onClick={() => setQuantity((q) => Math.min(effectiveStock, q + 1))}
+                disabled={isOOS || quantity >= effectiveStock}
                 className="w-10 h-10 border border-[#D4D4D4] rounded-[3px] flex items-center justify-center font-inter font-normal text-base uppercase disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 +
@@ -216,7 +276,7 @@ export default function ProductDetails({
             <button
               onClick={handleAddToCart}
               disabled={isOOS}
-              className="w-32.25 h-10 bg-black text-white font-inter font-medium text-[14px] lg:text-base leading-none uppercase rounded-[3px] px-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+              className="btn-accent w-32.25 h-10 font-inter font-semibold text-[14px] lg:text-base leading-none uppercase tracking-wide rounded-[8px] px-2.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
             >
               {isOOS ? "OUT OF STOCK" : "ADD TO CART"}
             </button>
@@ -244,10 +304,14 @@ export default function ProductDetails({
               </p>
             </div>
           )}
-          <div className="flex flex-col gap-1.25">
-            <p className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-black">Country of Origin</p>
-            <p className="font-inter font-normal text-[14px] lg:text-base leading-5 tracking-[0.02em] text-justify text-[#4B4B4B]">—</p>
-          </div>
+          {product.countryOfOrigin && (
+            <div className="flex flex-col gap-1.25">
+              <p className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-black">Country of Origin</p>
+              <p className="font-inter font-normal text-[14px] lg:text-base leading-5 tracking-[0.02em] text-justify text-[#4B4B4B]">
+                {product.countryOfOrigin}
+              </p>
+            </div>
+          )}
           {product.longDescription && (
             <div className="flex flex-col gap-1.25">
               <p className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-black">Description</p>

@@ -16,7 +16,7 @@ const features = [
   {
     icon: Shield,
     title: "Genuine Products",
-    description: "100% authentic medicines & healthcare",
+    description: "100% authentic products",
   },
   {
     icon: CreditCard,
@@ -36,7 +36,7 @@ const features = [
   {
     icon: Award,
     title: "Quality Assured",
-    description: "Licensed pharmacy with certified products",
+    description: "Certified products you can trust",
   },
 ];
 
@@ -45,10 +45,10 @@ export default function WhyChooseUs() {
     <div className="py-16 bg-gray-50">
       <div className="page-wrapper">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-3">Why Choose Daily Dose?</h2>
+          <h2 className="text-3xl font-bold mb-3">Why Choose 361 Gadgets?</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Your health is our priority. We provide genuine medicines and
-            healthcare products with the best service in the industry.
+            Quality is our priority. We provide genuine products with the best
+            service in the industry.
           </p>
         </div>
 
@@ -58,11 +58,11 @@ export default function WhyChooseUs() {
             return (
               <div
                 key={index}
-                className="bg-white p-6 rounded-lg border border-gray-200 hover:border-red-600 hover:shadow-lg transition-all group"
+                className="bg-white p-6 rounded-lg border border-gray-200 hover:border-primary hover:shadow-lg transition-all group"
               >
                 <div className="flex items-start gap-4">
-                  <div className="bg-red-100 p-3 rounded-lg group-hover:bg-red-600 transition-colors">
-                    <Icon className="h-6 w-6 text-red-600 group-hover:text-white transition-colors" />
+                  <div className="bg-(--primary-tint-12) p-3 rounded-lg group-hover:bg-primary transition-colors">
+                    <Icon className="h-6 w-6 text-primary group-hover:text-primary-foreground transition-colors" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">

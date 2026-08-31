@@ -3,6 +3,13 @@ export interface CartItem {
   userId: number;
   productId: number;
   quantity: number;
+  colorId?: number | null;
+  color?: {
+    id: number;
+    name: string;
+    hexCode: string | null;
+    stockQuantity: number;
+  } | null;
   createdAt: string;
   updatedAt: string;
   product?: {
@@ -44,6 +51,7 @@ export interface CartApiResponse {
 export interface AddToCartRequest {
   productId: number;
   quantity: number;
+  colorId?: number;
 }
 
 export interface UpdateCartRequest {

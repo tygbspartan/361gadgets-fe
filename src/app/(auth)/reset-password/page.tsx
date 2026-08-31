@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 
 const INPUT =
-  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-black transition-colors";
+  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-primary transition-colors";
 const LABEL = "font-montserrat font-normal text-[14px] leading-tight text-black";
 
 function PasswordInput({
@@ -35,7 +35,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-black transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-foreground transition-colors"
       >
         <Icon icon={show ? "mdi:eye-off-outline" : "mdi:eye-outline"} width={18} height={18} />
       </button>
@@ -93,7 +93,7 @@ function ResetPasswordContent() {
           </div>
           <Link
             href={ROUTES.LOGIN}
-            className="mt-7.5 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="mt-7.5 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
           >
             Back to Sign In
           </Link>
@@ -131,7 +131,7 @@ function ResetPasswordContent() {
             <button
               type="submit"
               disabled={isLoading || !token}
-              className="mt-6.25 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="mt-6.25 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Resetting…</>

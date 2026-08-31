@@ -18,17 +18,37 @@ function persist(items: CartItem[]) {
   }
 }
 
-// Build a CartItem from a Product. For guests we use the productId as the
-// item id (guests have no sizes, so one product == one cart line), and a
-// userId of 0. The product snapshot mirrors the shape the API returns so the
-// flyout/checkout render identically whether the cart is local or remote.
-export function buildGuestCartItem(product: Product, quantity: number): CartItem {
+// A guest cart line's id: the productId for a plain product, or a composite of
+// product + color so different colors of the same product are separate lines.
+function guestLineId(productId: number, colorId?: number): number {
+  return colorId ? productId * 1_000_000 + colorId : productId;
+}
+
+// Build a CartItem from a Product (+ optional color). For guests the line id is
+// derived from product/color, with a userId of 0. The snapshot mirrors the API
+// shape so the flyout/checkout render identically whether local or remote.
+export function buildGuestCartItem(
+  product: Product,
+  quantity: number,
+  colorId?: number
+): CartItem {
   const now = new Date().toISOString();
+  const color =
+    colorId != null ? product.colors?.find((c) => c.id === colorId) : undefined;
   return {
-    id: product.id,
+    id: guestLineId(product.id, colorId),
     userId: 0,
     productId: product.id,
     quantity,
+    colorId: color ? color.id : null,
+    color: color
+      ? {
+          id: color.id,
+          name: color.name,
+          hexCode: color.hexCode,
+          stockQuantity: color.stockQuantity,
+        }
+      : null,
     createdAt: now,
     updatedAt: now,
     product: {
@@ -72,22 +92,28 @@ const guestCartSlice = createSlice({
     },
     addGuestCartItem: (
       state,
-      action: PayloadAction<{ product: Product; quantity: number }>
+      action: PayloadAction<{ product: Product; quantity: number; colorId?: number }>
     ) => {
-      const { product, quantity } = action.payload;
-      const existing = state.items.find((i) => i.productId === product.id);
+      const { product, quantity, colorId } = action.payload;
+      const lineId = guestLineId(product.id, colorId);
+      const existing = state.items.find((i) => i.id === lineId);
+      // Stock cap uses the color's stock when a color was chosen.
+      const cap =
+        (colorId != null
+          ? product.colors?.find((c) => c.id === colorId)?.stockQuantity
+          : product.stockQuantity) || undefined;
       if (existing) {
-        const next = Math.min(
-          existing.quantity + quantity,
-          product.stockQuantity || existing.quantity + quantity
-        );
+        const next = cap
+          ? Math.min(existing.quantity + quantity, cap)
+          : existing.quantity + quantity;
         // Refresh the snapshot (price/stock/images may have changed) and qty.
-        const rebuilt = buildGuestCartItem(product, next);
+        const rebuilt = buildGuestCartItem(product, next, colorId);
         existing.quantity = next;
         existing.product = rebuilt.product;
+        existing.color = rebuilt.color;
         existing.updatedAt = rebuilt.updatedAt;
       } else {
-        state.items.push(buildGuestCartItem(product, quantity));
+        state.items.push(buildGuestCartItem(product, quantity, colorId));
       }
       persist(state.items);
     },

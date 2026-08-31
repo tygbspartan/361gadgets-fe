@@ -1,4 +1,7 @@
 export interface DashboardStats {
+  // How the numbers are scoped: "platform" (superadmin) or "vendor" (own data).
+  scope?: "platform" | "vendor";
+
   // Top section
   totalProducts: number;
   totalDiscounts: number;

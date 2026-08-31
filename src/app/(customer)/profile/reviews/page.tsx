@@ -260,7 +260,7 @@ export default function ProfileReviewsPage() {
           <div className="bg-white rounded-lg w-128.75 p-6.25 flex flex-col gap-5 relative mx-4">
             <button
               onClick={() => setDeleteConfirm(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-foreground transition-colors"
             >
               <Icon icon="material-symbols:close" width={20} height={20} />
             </button>
@@ -270,7 +270,7 @@ export default function ProfileReviewsPage() {
             <div className="flex justify-end">
               <button
                 onClick={confirmDelete}
-                className="bg-black text-white font-inter font-semibold text-base leading-none uppercase rounded-[3px] px-5 py-2.5 hover:opacity-80 transition-opacity"
+                className="bg-primary text-primary-foreground font-inter font-semibold text-base leading-none uppercase rounded-[3px] px-5 py-2.5 hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
               >
                 DELETE
               </button>
@@ -288,7 +288,7 @@ export default function ProfileReviewsPage() {
           <div className="bg-white rounded-lg w-128.75 p-6.25 flex flex-col gap-5 relative mx-4">
             <button
               onClick={closeFollowupModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-foreground transition-colors"
             >
               <Icon icon="material-symbols:close" width={20} height={20} />
             </button>
@@ -301,7 +301,7 @@ export default function ProfileReviewsPage() {
                 onChange={(e) => setFollowupComment(e.target.value)}
                 placeholder="How has the product held up?"
                 rows={4}
-                className="w-full border border-[#C9C9C9] rounded-[5px] px-3 py-2.5 font-inter font-normal text-base outline-none focus:border-black transition-colors resize-none"
+                className="w-full border border-[#C9C9C9] rounded-[5px] px-3 py-2.5 font-inter font-normal text-base outline-none focus:border-primary transition-colors resize-none"
               />
             </div>
             {followupError && (
@@ -311,7 +311,7 @@ export default function ProfileReviewsPage() {
               <button
                 onClick={handleFollowupSubmit}
                 disabled={isSubmittingFollowup}
-                className="bg-black text-white font-inter font-semibold text-base leading-none uppercase rounded-[3px] px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+                className="bg-primary text-primary-foreground font-inter font-semibold text-base leading-none uppercase rounded-[3px] px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
               >
                 {isSubmittingFollowup ? "Posting…" : "POST"}
               </button>

@@ -65,7 +65,7 @@ export default function WriteReview({ productId, isAuthenticated, onReviewSubmit
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Summarise your experience"
-              className="w-full h-8.75 lg:h-10 border border-[#C9C9C9] rounded-[3px] px-3 font-montserrat font-normal text-[12px] lg:text-base outline-none focus:border-black transition-colors"
+              className="w-full h-8.75 lg:h-10 border border-[#C9C9C9] rounded-[3px] px-3 font-montserrat font-normal text-[12px] lg:text-base outline-none focus:border-primary transition-colors"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function WriteReview({ productId, isAuthenticated, onReviewSubmit
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your experience with this product..."
               rows={4}
-              className="w-full border border-[#C9C9C9] rounded-[3px] px-3 py-2.5 font-montserrat font-normal text-[12px] lg:text-base outline-none focus:border-black transition-colors resize-none"
+              className="w-full border border-[#C9C9C9] rounded-[3px] px-3 py-2.5 font-montserrat font-normal text-[12px] lg:text-base outline-none focus:border-primary transition-colors resize-none"
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function WriteReview({ productId, isAuthenticated, onReviewSubmit
             type={isAuthenticated ? "submit" : "button"}
             onClick={!isAuthenticated ? () => router.push(ROUTES.LOGIN) : undefined}
             disabled={isLoading}
-            className="w-fit bg-black text-white font-inter font-medium text-[10px] lg:text-base leading-none uppercase rounded-[3px] p-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+            className="w-fit bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none uppercase rounded-[3px] p-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
           >
             {isLoading ? "Posting…" : "POST"}
           </button>

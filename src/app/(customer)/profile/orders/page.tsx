@@ -158,7 +158,7 @@ export default function ProfileOrdersPage() {
                                 )}
                               </Link>
                               <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-primary flex items-center justify-center z-10">
-                                <span className="font-inter font-normal text-[12.5px] leading-none text-white">
+                                <span className="font-inter font-normal text-[12.5px] leading-none text-primary-foreground">
                                   {item.quantity}
                                 </span>
                               </div>
@@ -252,7 +252,7 @@ export default function ProfileOrdersPage() {
                       onClick={() => setPage(p)}
                       className={`px-4 py-2 border rounded-lg font-inter text-sm ${
                         p === page
-                          ? "bg-primary text-white border-primary"
+                          ? "bg-primary text-primary-foreground border-primary"
                           : "border-gray-300 hover:border-primary"
                       }`}
                     >

@@ -83,8 +83,8 @@ export default function OrderConfirmationPage() {
           {/* Email Confirmation */}
           <div className="bg-white p-6 rounded-lg border border-gray-200 text-left">
             <div className="flex items-start gap-4">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Mail className="h-6 w-6 text-blue-600" />
+              <div className="bg-gray-100 p-3 rounded-lg">
+                <Mail className="h-6 w-6 text-foreground" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Email Confirmation</h3>
@@ -114,24 +114,24 @@ export default function OrderConfirmationPage() {
         </div>
 
         {/* Next Steps */}
-        <div className="bg-blue-50 rounded-lg p-6 mb-8 border border-blue-200 text-left">
+        <div className="bg-gray-50 rounded-lg p-6 mb-8 border border-gray-200 text-left">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
+            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-sm">
               ℹ
             </span>
             What happens next?
           </h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 ">1.</span>
+              <span className="text-foreground font-semibold">1.</span>
               <span>You'll receive an email confirmation shortly</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-blue-600 ">2.</span>
+              <span className="text-foreground font-semibold">2.</span>
               <span>We'll process your order and prepare it for shipping</span>
             </li>
             <li className="flex gap-2 items-center">
-              <span className="text-blue-600 ">3.</span>
+              <span className="text-foreground font-semibold">3.</span>
               <span>Your order will be delivered within 2-3 business days</span>
             </li>
           </ul>
@@ -164,10 +164,10 @@ export default function OrderConfirmationPage() {
           <p className="text-sm text-gray-600">
             Contact us at{" "}
             <a
-              href="mailto:support@dailydose.com"
+              href="mailto:support@361gadgets.com"
               className="text-red-600 hover:underline"
             >
-              support@dailydose.com
+              support@361gadgets.com
             </a>{" "}
             or call{" "}
             <a

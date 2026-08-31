@@ -24,6 +24,11 @@ import {
   Eye,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import RequestCatalogButton from "@/components/admin/RequestCatalogButton";
 
 // REMOVE THIS INTERFACE - it's now imported from categoriesApi
 // interface Category {
@@ -37,6 +42,12 @@ interface CategoryTree extends Category {
 }
 
 export default function CategoriesPage() {
+  // Only the superadmin manages categories; vendors can only view + request.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canManage = isSuper(role);
+  const { toastSuccess, toastError } = useToastHelpers();
+  const confirm = useConfirm();
+
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
@@ -114,15 +125,18 @@ export default function CategoriesPage() {
 
   const handleDelete = async (id: number, name: string) => {
     if (
-      confirm(
-        `Are you sure you want to delete "${name}"? This will also delete all subcategories.`,
-      )
+      await confirm({
+        title: "Delete category",
+        message: `Are you sure you want to delete "${name}"? This will also delete all subcategories.`,
+        confirmText: "Delete",
+        destructive: true,
+      })
     ) {
       try {
         await deleteCategory(id).unwrap();
-        alert("Category deleted successfully");
+        toastSuccess("Category deleted successfully");
       } catch (err: any) {
-        alert(err?.data?.message || "Failed to delete category");
+        toastError(err?.data?.message || "Failed to delete category");
       }
     }
   };
@@ -254,19 +268,23 @@ export default function CategoriesPage() {
                 <Eye className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href={`${ROUTES.ADMIN_CATEGORIES}/${category.id}/edit`}>
-              <Button variant="ghost" size="sm">
-                <Edit className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDelete(category.id, category.name)}
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-4 w-4 text-primary" />
-            </Button>
+            {canManage && (
+              <>
+                <Link href={`${ROUTES.ADMIN_CATEGORIES}/${category.id}/edit`}>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(category.id, category.name)}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4 text-primary" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -302,15 +320,21 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-3xl font-bold">Categories</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product categories (3-level hierarchy)
+            {canManage
+              ? "Manage product categories (3-level hierarchy)"
+              : "Browse categories — request a new one if it's missing"}
           </p>
         </div>
-        <Link href={`${ROUTES.ADMIN_CATEGORIES}/create`}>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Category
-          </Button>
-        </Link>
+        {canManage ? (
+          <Link href={`${ROUTES.ADMIN_CATEGORIES}/create`}>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Category
+            </Button>
+          </Link>
+        ) : (
+          <RequestCatalogButton type="category" />
+        )}
       </div>
 
       {/* Search & Actions */}
@@ -383,16 +407,23 @@ export default function CategoriesPage() {
               <p className="text-sm text-muted-foreground mt-2">
                 {search
                   ? "Try adjusting your search"
-                  : "Get started by adding your first category"}
+                  : canManage
+                    ? "Get started by adding your first category"
+                    : "Request a category to have it added to the catalog"}
               </p>
-              {!search && (
-                <Link href={`${ROUTES.ADMIN_CATEGORIES}/create`}>
-                  <Button className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Category
-                  </Button>
-                </Link>
-              )}
+              {!search &&
+                (canManage ? (
+                  <Link href={`${ROUTES.ADMIN_CATEGORIES}/create`}>
+                    <Button className="mt-4">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </Link>
+                ) : (
+                  <div className="mt-4 inline-block">
+                    <RequestCatalogButton type="category" />
+                  </div>
+                ))}
             </div>
           ) : (
             <div className="border rounded-md">

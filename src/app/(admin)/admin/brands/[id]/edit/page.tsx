@@ -29,11 +29,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 export default function EditBrandPage() {
   const router = useRouter();
   const params = useParams();
   const brandId = parseInt(params.id as string);
+  const confirm = useConfirm();
 
   const { data: brandData, isLoading: isLoadingBrand } =
     useGetBrandByIdQuery(brandId);
@@ -107,7 +109,7 @@ export default function EditBrandPage() {
   };
 
   const handleDeleteLogo = async () => {
-    if (!confirm("Remove the current logo?")) return;
+    if (!(await confirm({ message: "Remove the current logo?", confirmText: "Remove", destructive: true }))) return;
     try {
       await deleteBrandLogo(brandId).unwrap();
     } catch (err: any) {

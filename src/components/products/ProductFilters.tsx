@@ -18,15 +18,6 @@ interface Props {
   variant?: "sidebar" | "sheet";
 }
 
-const SKIN_TYPES = ["Normal", "Dry", "Oily", "Combination", "Sensitive"];
-const SKIN_CONCERNS = [
-  "Acne & Breakouts", "Oil Control", "Large Pores", "Dryness",
-  "Dehydration", "Sensitivity & Redness", "Dark Spots & Hyperpigmentation",
-  "Uneven Skin Tone", "Dullness & Brightening", "Uneven Texture",
-  "Fine Lines & Wrinkles", "Firmness & Elasticity", "Dark Circles",
-  "Puffiness", "Sun Protection",
-];
-
 export default function ProductFilters({
   brands,
   minPrice,
@@ -41,16 +32,7 @@ export default function ProductFilters({
   const [priceMax, setPriceMax] = useState(maxPrice?.toString() || "");
   const [openSections, setOpenSections] = useState({
     brand: true,
-    skinType: true,
-    skinConcern: true,
   });
-
-  const selectedSkinTypes = (searchParams.get("skinType") || "")
-    .split(",")
-    .filter(Boolean);
-  const selectedConcerns = (searchParams.get("skinConcern") || "")
-    .split(",")
-    .filter(Boolean);
 
   const toggleSection = (key: keyof typeof openSections) =>
     setOpenSections((s) => ({ ...s, [key]: !s[key] }));
@@ -66,17 +48,6 @@ export default function ProductFilters({
     router.push(`/products?${params.toString()}`);
   };
 
-  const toggleMultiParam = (key: string, value: string, current: string[]) => {
-    const next = current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value];
-    const params = new URLSearchParams(searchParams.toString());
-    if (next.length) params.set(key, next.join(","));
-    else params.delete(key);
-    params.delete("page");
-    router.push(`/products?${params.toString()}`);
-  };
-
   const handlePriceFilter = () => {
     const min = priceMin ? parseFloat(priceMin) : undefined;
     const max = priceMax ? parseFloat(priceMax) : undefined;
@@ -86,8 +57,6 @@ export default function ProductFilters({
   const hasActiveFilters =
     searchParams.has("category") ||
     searchParams.has("brand") ||
-    searchParams.has("skinType") ||
-    searchParams.has("skinConcern") ||
     !!minPrice ||
     !!maxPrice;
 
@@ -214,46 +183,6 @@ export default function ProductFilters({
               </li>
             );
           })}
-        </ul>
-      )}
-
-      {/* Skin Type */}
-      <div className="border-t-[0.5px] border-t-[#B1A6A6]" />
-      {section(
-        "skinType",
-        "Skin Type",
-        <ul className="flex flex-col">
-          {SKIN_TYPES.map((type) => (
-            <li key={type}>
-              <button
-                onClick={() => toggleMultiParam("skinType", type, selectedSkinTypes)}
-                className={optionClass(selectedSkinTypes.includes(type))}
-              >
-                {type}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Skin Concern */}
-      <div className="border-t-[0.5px] border-t-[#B1A6A6]" />
-      {section(
-        "skinConcern",
-        "Skin Concern",
-        <ul className="flex flex-col">
-          {SKIN_CONCERNS.map((concern) => (
-            <li key={concern}>
-              <button
-                onClick={() =>
-                  toggleMultiParam("skinConcern", concern, selectedConcerns)
-                }
-                className={optionClass(selectedConcerns.includes(concern))}
-              >
-                {concern}
-              </button>
-            </li>
-          ))}
         </ul>
       )}
     </div>

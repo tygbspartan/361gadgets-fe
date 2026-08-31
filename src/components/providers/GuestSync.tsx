@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
-import { useAddToCartMutation } from "@/lib/redux/features/cart/cartApi";
+import { useMergeCartMutation } from "@/lib/redux/features/cart/cartApi";
 import { useAddToWishlistMutation } from "@/lib/redux/features/wishlist/wishlistApi";
 import { clearGuestCart } from "@/lib/redux/features/cart/guestCartSlice";
 import { clearGuestWishlist } from "@/lib/redux/features/wishlist/guestWishlistSlice";
@@ -23,7 +23,7 @@ export default function GuestSync() {
   const guestCart = useSelector((s: RootState) => s.guestCart.items);
   const guestWishlist = useSelector((s: RootState) => s.guestWishlist.items);
 
-  const [addToCart] = useAddToCartMutation();
+  const [mergeCart] = useMergeCartMutation();
   const [addToWishlist] = useAddToWishlistMutation();
 
   const wasAuthenticated = useRef(isAuthenticated);
@@ -41,11 +41,19 @@ export default function GuestSync() {
     merging.current = true;
 
     (async () => {
-      for (const item of cartToMerge) {
+      if (cartToMerge.length > 0) {
         try {
-          await addToCart({ productId: item.productId, quantity: item.quantity }).unwrap();
+          // One call — the backend caps quantities at stock, preserves the
+          // chosen color, and skips unavailable items.
+          await mergeCart({
+            items: cartToMerge.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              colorId: item.colorId ?? undefined,
+            })),
+          }).unwrap();
         } catch {
-          /* skip items that fail (e.g. out of stock) */
+          /* best-effort merge; guest cart is cleared regardless below */
         }
       }
       for (const item of wishlistToMerge) {
@@ -59,7 +67,7 @@ export default function GuestSync() {
       dispatch(clearGuestWishlist());
       merging.current = false;
     })();
-  }, [isAuthenticated, guestCart, guestWishlist, addToCart, addToWishlist, dispatch]);
+  }, [isAuthenticated, guestCart, guestWishlist, mergeCart, addToWishlist, dispatch]);
 
   return null;
 }

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 import {
   Package,
   Tag,
@@ -40,6 +41,7 @@ const getDefaultDates = () => {
 export default function AdminDashboardPage() {
   const defaults = getDefaultDates();
 
+  const { toastError } = useToastHelpers();
   const [startDate, setStartDate] = useState(defaults.start);
   const [endDate, setEndDate] = useState(defaults.end);
   const [appliedStartDate, setAppliedStartDate] = useState(defaults.start);
@@ -52,12 +54,12 @@ export default function AdminDashboardPage() {
 
   const handleApplyFilter = () => {
     if (!startDate || !endDate) {
-      alert("Please select both start and end dates");
+      toastError("Please select both start and end dates");
       return;
     }
 
     if (new Date(startDate) > new Date(endDate)) {
-      alert("Start date must be before end date");
+      toastError("Start date must be before end date");
       return;
     }
 
@@ -163,7 +165,11 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview of your store performance</p>
+        <p className="text-gray-600 mt-1">
+          {data.scope === "platform"
+            ? "Platform-wide overview across all vendors"
+            : "Overview of your store performance"}
+        </p>
       </div>
 
       {/* Top Stats - Total Active Items */}

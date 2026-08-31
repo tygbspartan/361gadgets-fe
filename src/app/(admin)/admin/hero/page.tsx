@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import {
   Plus,
   Trash2,
@@ -96,7 +98,7 @@ function HeroModal({ mode, image, onClose, onSuccess }: ModalProps) {
       <div className="bg-white rounded-lg w-full max-w-md shadow-xl p-6 relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-black"
+          className="absolute top-4 right-4 text-gray-400 hover:text-foreground"
         >
           <X className="w-5 h-5" />
         </button>
@@ -195,6 +197,8 @@ function HeroModal({ mode, image, onClose, onSuccess }: ModalProps) {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function AdminHeroPage() {
+  const { toastError } = useToastHelpers();
+  const confirm = useConfirm();
   const { data, isLoading } = useGetAllHeroImagesQuery();
   const [updateHero] = useUpdateHeroImageMutation();
   const [reorderHero] = useReorderHeroImagesMutation();
@@ -208,7 +212,7 @@ export default function AdminHeroPage() {
     try {
       await updateHero({ id: image.id, body: { isActive: !image.isActive } }).unwrap();
     } catch {
-      alert("Failed to update status");
+      toastError("Failed to update status");
     }
   };
 
@@ -226,16 +230,24 @@ export default function AdminHeroPage() {
     try {
       await reorderHero({ order: updated }).unwrap();
     } catch {
-      alert("Failed to reorder");
+      toastError("Failed to reorder");
     }
   };
 
   const handleDelete = async (image: HeroImage) => {
-    if (!confirm(`Delete this banner image? This cannot be undone.`)) return;
+    if (
+      !(await confirm({
+        title: "Delete banner",
+        message: "Delete this banner image? This cannot be undone.",
+        confirmText: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     try {
       await deleteHero(image.id).unwrap();
     } catch {
-      alert("Failed to delete image");
+      toastError("Failed to delete image");
     }
   };
 

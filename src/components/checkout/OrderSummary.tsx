@@ -95,7 +95,7 @@ export default function OrderSummary({
                 </div>
                 {/* Quantity bubble */}
                 <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-primary flex items-center justify-center z-10">
-                  <span className="font-inter font-normal text-[15px] leading-none text-white">
+                  <span className="font-inter font-normal text-[15px] leading-none text-primary-foreground">
                     {item.quantity}
                   </span>
                 </div>
@@ -169,7 +169,7 @@ export default function OrderSummary({
             <button
               onClick={onApplyDiscount}
               disabled={isValidatingDiscount || !discountCode.trim()}
-              className="shrink-0 bg-black text-white font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+              className="shrink-0 bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
             >
               {isValidatingDiscount ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -243,7 +243,7 @@ export default function OrderSummary({
       <button
         onClick={onCheckout}
         disabled={isCheckingOut}
-        className="-mt-2.5 w-full bg-black text-white font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+        className="-mt-2.5 w-full bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
       >
         {isCheckingOut ? (
           <>

@@ -97,9 +97,12 @@ export const NEPAL_DISTRICTS = [
   "Udayapur",
 ];
 
+// Fallback shipping values, used only until the live platform settings load
+// (and if that request fails). Must mirror the backend PlatformSettings defaults.
 export const SHIPPING_COSTS = {
   INSIDE_VALLEY: 100,
   OUTSIDE_VALLEY: 200,
+  FREE_SHIPPING_THRESHOLD: 10000,
 };
 
 export const PAYMENT_METHODS = {

@@ -26,11 +26,13 @@ import {
 import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 
 export default function EditDiscountPage() {
   const params = useParams();
   const router = useRouter();
   const discountId = parseInt(params.id as string);
+  const { toastSuccess, toastError } = useToastHelpers();
 
   const { data: discount, isLoading: isLoadingDiscount } =
     useGetDiscountQuery(discountId);
@@ -185,11 +187,11 @@ export default function EditDiscountPage() {
         },
       }).unwrap();
 
-      alert("Discount updated successfully!");
+      toastSuccess("Discount updated successfully!");
       router.push(ROUTES.ADMIN_DISCOUNTS);
     } catch (err: any) {
       console.error("Failed to update discount:", err);
-      alert(err?.data?.message || "Failed to update discount");
+      toastError(err?.data?.message || "Failed to update discount");
     }
   };
 

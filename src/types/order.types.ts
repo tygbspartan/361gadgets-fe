@@ -70,6 +70,10 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
 
+  // Vendor-scoped view only: this vendor's share of the order (sum of their
+  // item subtotals). Absent for the superadmin (who sees the full order).
+  vendorSubtotal?: string;
+
   // Relations
   user?: {
     id: number;

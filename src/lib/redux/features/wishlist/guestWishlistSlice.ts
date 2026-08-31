@@ -35,7 +35,6 @@ export function buildGuestWishlistItem(product: Product): WishlistItem {
       originalPrice: product.originalPrice != null ? String(product.originalPrice) : null,
       stockQuantity: product.stockQuantity,
       lowStockThreshold: product.lowStockThreshold,
-      shortDescription: product.shortDescription,
       stockStatus: product.stockStatus,
       images: product.images?.map((img) => ({
         id: img.id,

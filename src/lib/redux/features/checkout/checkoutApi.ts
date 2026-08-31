@@ -12,11 +12,19 @@ export const checkoutApi = createApi({
   baseQuery: baseQueryWithAuth,
   tagTypes: ["Order"],
   endpoints: (builder) => ({
-    // Create order (checkout)
-    checkout: builder.mutation<CheckoutResponse, CheckoutRequest>({
-      query: (body) => ({
+    // Create order (checkout).
+    // An optional Idempotency-Key (sent as a header, not in the body) lets a
+    // double-click or network retry resolve to the SAME order instead of
+    // creating duplicates — the backend returns the original order for a
+    // repeated key.
+    checkout: builder.mutation<
+      CheckoutResponse,
+      CheckoutRequest & { idempotencyKey?: string }
+    >({
+      query: ({ idempotencyKey, ...body }) => ({
         url: "/orders/checkout",
         method: "POST",
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
         body,
       }),
       invalidatesTags: ["Order"],

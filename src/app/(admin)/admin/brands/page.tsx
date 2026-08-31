@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  useGetBrandsQuery,
+  useGetAdminBrandsQuery,
   useDeleteBrandMutation,
 } from "@/lib/redux/features/brands/brandsApi";
 import { Button } from "@/components/ui/button";
@@ -22,13 +22,25 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+import RequestCatalogButton from "@/components/admin/RequestCatalogButton";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 export default function BrandsPage() {
+  // Only the superadmin manages brands; vendors can only view + request.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canManage = isSuper(role);
+  const { toastSuccess, toastError } = useToastHelpers();
+  const confirm = useConfirm();
+
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [filterFeatured, setFilterFeatured] = useState<boolean | null>(null);
 
-  const { data, isLoading, error } = useGetBrandsQuery();
+  // Scoped list: vendors get only their own brands; superadmin gets all.
+  const { data, isLoading, error } = useGetAdminBrandsQuery();
   const [deleteBrand, { isLoading: isDeleting }] = useDeleteBrandMutation();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -37,12 +49,19 @@ export default function BrandsPage() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+    if (
+      await confirm({
+        title: "Delete brand",
+        message: `Are you sure you want to delete "${name}"?`,
+        confirmText: "Delete",
+        destructive: true,
+      })
+    ) {
       try {
         await deleteBrand(id).unwrap();
-        alert("Brand deleted successfully");
+        toastSuccess("Brand deleted successfully");
       } catch (err: any) {
-        alert(err?.data?.message || "Failed to delete brand");
+        toastError(err?.data?.message || "Failed to delete brand");
       }
     }
   };
@@ -82,15 +101,21 @@ export default function BrandsPage() {
         <div>
           <h1 className="text-3xl font-bold">Brands</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product brands
+            {canManage
+              ? "Manage product brands"
+              : "Browse brands — request a new one if it's missing"}
           </p>
         </div>
-        <Link href={`${ROUTES.ADMIN_BRANDS}/create`}>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Brand
-          </Button>
-        </Link>
+        {canManage ? (
+          <Link href={`${ROUTES.ADMIN_BRANDS}/create`}>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Brand
+            </Button>
+          </Link>
+        ) : (
+          <RequestCatalogButton type="brand" />
+        )}
       </div>
 
       {/* Search & Filters */}
@@ -167,16 +192,24 @@ export default function BrandsPage() {
             <p className="text-sm text-muted-foreground mt-2">
               {search || filterFeatured !== null
                 ? "Try adjusting your filters"
-                : "Get started by adding your first brand"}
+                : canManage
+                  ? "Get started by adding your first brand"
+                  : "No brands are assigned to you yet. Ask the platform admin to assign a brand so you can list products under it."}
             </p>
-            {!search && filterFeatured === null && (
-              <Link href={`${ROUTES.ADMIN_BRANDS}/create`}>
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Brand
-                </Button>
-              </Link>
-            )}
+            {!search &&
+              filterFeatured === null &&
+              (canManage ? (
+                <Link href={`${ROUTES.ADMIN_BRANDS}/create`}>
+                  <Button className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Brand
+                  </Button>
+                </Link>
+              ) : (
+                <div className="mt-4 inline-block">
+                  <RequestCatalogButton type="brand" />
+                </div>
+              ))}
           </div>
         ) : (
           <>
@@ -234,6 +267,18 @@ export default function BrandsPage() {
                               Inactive
                             </Badge>
                           )}
+                          {/* Superadmin sees who each brand is assigned to. */}
+                          {canManage && (
+                            <Badge variant="outline">
+                              {brand.owner
+                                ? brand.owner.companyName ||
+                                  [brand.owner.firstName, brand.owner.lastName]
+                                    .filter(Boolean)
+                                    .join(" ") ||
+                                  `Vendor #${brand.owner.id}`
+                                : "Unassigned"}
+                            </Badge>
+                          )}
                         </div>
                       </div>
 
@@ -259,20 +304,26 @@ export default function BrandsPage() {
                             View
                           </Button>
                         </Link>
-                        <Link href={`${ROUTES.ADMIN_BRANDS}/${brand.id}/edit`}>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(brand.id, brand.name)}
-                          disabled={isDeleting}
-                          className="border-primary/30 text-primary hover:bg-primary/5"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canManage && (
+                          <>
+                            <Link
+                              href={`${ROUTES.ADMIN_BRANDS}/${brand.id}/edit`}
+                            >
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(brand.id, brand.name)}
+                              disabled={isDeleting}
+                              className="border-primary/30 text-primary hover:bg-primary/5"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </CardContent>

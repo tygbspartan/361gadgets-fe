@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/redux/provider";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { BRAND } from "@/config/brand";
 
 const poppins = Poppins({
@@ -24,9 +25,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Daily Dose - Pharmaceutical & Personal Care",
-  description:
-    "Your one-stop shop for pharmaceutical and personal care products",
+  title: "361 Gadgets",
+  description: "Your one-stop shop for quality products",
   icons: {
     icon: "/favicon.ico",
   },
@@ -40,7 +40,9 @@ export default function RootLayout({
   return (
     <html lang="en" style={{ "--color-primary": BRAND.primaryColor, "--color-ring": BRAND.primaryColor } as React.CSSProperties}>
       <body className={`${poppins.className} ${inter.variable} ${montserrat.variable}`}>
-        <ReduxProvider>{children}</ReduxProvider>
+        <ReduxProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

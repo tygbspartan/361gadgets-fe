@@ -6,6 +6,8 @@ export const API_ENDPOINTS = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   ME: "/auth/me",
+  UPDATE_PROFILE: "/auth/me", // PATCH — self-service profile update
+  CHANGE_PASSWORD: "/auth/change-password",
   LOGOUT: "/auth/logout",
   VERIFY_EMAIL: "/auth/verify-email",
   RESEND_VERIFICATION: "/auth/resend-verification",
@@ -14,6 +16,8 @@ export const API_ENDPOINTS = {
 
   // Products
   PRODUCTS: "/products",
+  PRODUCTS_ADMIN: "/products/admin/list", // own products (superadmin: all, ?ownerId=)
+  PRODUCTS_COMPARE: "/products/compare", // ?ids=1,2,3 (max 3)
   PRODUCT_BY_ID: (id: number) => `/products/${id}`,
   PRODUCT_BY_SLUG: (slug: string) => `/products/slug/${slug}`,
 
@@ -36,6 +40,21 @@ export const API_ENDPOINTS = {
   // Discounts
   DISCOUNTS: "/discounts",
   DISCOUNT_BY_ID: (id: number) => `/discounts/${id}`,
+
+  // Vendors (superadmin only)
+  VENDORS: "/admin/vendors",
+  VENDOR_BY_ID: (id: number) => `/admin/vendors/${id}`,
+  VENDOR_STATUS: (id: number) => `/admin/vendors/${id}/status`,
+  VENDOR_LOGO_UPLOAD: (id: number) => `/admin/vendors/${id}/logo/upload`,
+  VENDOR_LOGO_DELETE: (id: number) => `/admin/vendors/${id}/logo`,
+  VENDOR_BRANDS: (id: number) => `/admin/vendors/${id}/brands`,
+
+  // Vendor earnings / payouts owed (superadmin only)
+  VENDOR_EARNINGS: "/admin/vendors/earnings",
+  VENDOR_EARNINGS_DETAIL: (id: number) => `/admin/vendors/${id}/earnings`,
+
+  // Catalog requests (vendors request new brands/categories)
+  CATALOG_REQUESTS: "/catalog-requests",
 
   // Reviews
   REVIEWS: "/reviews",

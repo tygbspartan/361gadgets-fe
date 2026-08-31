@@ -73,15 +73,6 @@ export const ordersApi = createApi({
       ],
     }),
 
-    // Delete order (Admin - for testing/errors only)
-    deleteOrder: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/orders/admin/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Orders"],
-    }),
-
     // ========== CUSTOMER ENDPOINTS ==========
 
     // Get user's orders with filters (Customer)
@@ -130,7 +121,6 @@ export const {
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
   useUpdatePaymentStatusMutation,
-  useDeleteOrderMutation,
 
   // Customer hooks
   useGetUserOrdersQuery,

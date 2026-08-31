@@ -23,9 +23,11 @@ import {
 import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 
 export default function CreateDiscountPage() {
   const router = useRouter();
+  const { toastSuccess, toastError } = useToastHelpers();
   const [createDiscount, { isLoading }] = useCreateDiscountMutation();
 
   // Form state
@@ -116,11 +118,11 @@ export default function CreateDiscountPage() {
         isActive,
       }).unwrap();
 
-      alert("Discount created successfully!");
+      toastSuccess("Discount created successfully!");
       router.push(ROUTES.ADMIN_DISCOUNTS);
     } catch (err: any) {
       console.error("Failed to create discount:", err);
-      alert(err?.data?.message || "Failed to create discount");
+      toastError(err?.data?.message || "Failed to create discount");
     }
   };
 

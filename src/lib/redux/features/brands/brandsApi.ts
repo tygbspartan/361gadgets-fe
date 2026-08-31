@@ -11,8 +11,23 @@ export interface Brand {
   isActive: boolean;
   metaTitle: string | null;
   metaDescription: string | null;
+  /** Vendor this brand is reserved for. null = unclaimed. */
+  ownerId: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BrandOwner {
+  id: number;
+  companyName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+/** A brand as returned by the scoped admin list — includes owner + product count. */
+export interface AdminBrand extends Brand {
+  owner: BrandOwner | null;
+  productCount: number;
 }
 
 export interface CreateBrandRequest {
@@ -41,6 +56,21 @@ export const brandsApi = createApi({
     // Get all brands
     getBrands: builder.query<{ status: string; data: Brand[] }, void>({
       query: () => "/brands",
+      providesTags: ["Brands"],
+    }),
+
+    // Scoped admin brand list: vendor = own brands; superadmin = all (optionally
+    // filtered by ownerId, or "null" for unassigned). Includes owner + count.
+    getAdminBrands: builder.query<
+      { status: string; data: AdminBrand[] },
+      { ownerId?: number | "null" } | void
+    >({
+      query: (arg) => {
+        const ownerId = arg && "ownerId" in arg ? arg.ownerId : undefined;
+        return ownerId !== undefined
+          ? `/brands/admin/list?ownerId=${ownerId}`
+          : "/brands/admin/list";
+      },
       providesTags: ["Brands"],
     }),
 
@@ -109,15 +139,31 @@ export const brandsApi = createApi({
       }),
       invalidatesTags: (result, error, id) => [{ type: "Brands", id }, "Brands"],
     }),
+
+    // Set the exact set of brands a vendor owns (superadmin). Assigns/reassigns
+    // the given brands to the vendor and releases the rest.
+    assignBrandsToVendor: builder.mutation<
+      { status: string; message: string },
+      { vendorId: number; brandIds: number[] }
+    >({
+      query: ({ vendorId, brandIds }) => ({
+        url: `/admin/vendors/${vendorId}/brands`,
+        method: "PUT",
+        body: { brandIds },
+      }),
+      invalidatesTags: ["Brands"],
+    }),
   }),
 });
 
 export const {
   useGetBrandsQuery,
+  useGetAdminBrandsQuery,
   useGetBrandByIdQuery,
   useCreateBrandMutation,
   useUpdateBrandMutation,
   useDeleteBrandMutation,
   useUploadBrandLogoMutation,
   useDeleteBrandLogoMutation,
+  useAssignBrandsToVendorMutation,
 } = brandsApi;

@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -54,6 +56,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export default function ReviewsPage() {
+  const { toastSuccess, toastError } = useToastHelpers();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -134,7 +138,7 @@ export default function ReviewsPage() {
       setAdminNote(""); // Reset note
     } catch (err) {
       console.error("Failed to approve review:", err);
-      alert("Failed to approve review");
+      toastError("Failed to approve review");
     }
   };
 
@@ -150,7 +154,7 @@ export default function ReviewsPage() {
       setAdminNote(""); // Reset note
     } catch (err) {
       console.error("Failed to reject review:", err);
-      alert("Failed to reject review");
+      toastError("Failed to reject review");
     }
   };
 
@@ -166,7 +170,7 @@ export default function ReviewsPage() {
     if (!selectedReview) return;
 
     if (!adminNote.trim()) {
-      alert("Please provide an admin note");
+      toastError("Please provide an admin note");
       return;
     }
 
@@ -182,16 +186,19 @@ export default function ReviewsPage() {
 
   const handleDelete = async (id: number, productName: string) => {
     if (
-      window.confirm(
-        `Are you sure you want to delete this review for "${productName}"?`,
-      )
+      await confirm({
+        title: "Delete review",
+        message: `Are you sure you want to delete this review for "${productName}"?`,
+        confirmText: "Delete",
+        destructive: true,
+      })
     ) {
       try {
         await deleteReview(id).unwrap();
-        alert("Review deleted successfully!");
+        toastSuccess("Review deleted successfully!");
       } catch (err) {
         console.error("Failed to delete review:", err);
-        alert("Failed to delete review");
+        toastError("Failed to delete review");
       }
     }
   };
@@ -742,7 +749,9 @@ export default function ReviewsPage() {
                 <Button
                   onClick={handleConfirmAction}
                   className={`flex-1 ${
-                    actionType === "reject" ? "bg-primary hover:bg-primary/80" : ""
+                    actionType === "reject"
+                      ? "bg-primary hover:bg-(--primary-hover)"
+                      : ""
                   }`}
                 >
                   {actionType === "approve" ? (

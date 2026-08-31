@@ -12,11 +12,12 @@ import {
 } from "@/lib/redux/features/auth/authApi";
 import { setCredentials } from "@/lib/redux/features/auth/authSlice";
 import { ROUTES } from "@/constants/routes";
+import { isPrivileged } from "@/constants/roles";
 
 type Tab = "signin" | "register";
 
 const INPUT =
-  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-black transition-colors";
+  "w-full h-11 border border-[#C9C9C9] rounded-[5px] px-3 bg-white font-inter font-normal text-sm text-black placeholder:text-[#9CA3AF] outline-none focus:border-primary transition-colors";
 
 const LABEL =
   "font-montserrat font-normal text-[14px] leading-tight text-black";
@@ -57,7 +58,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-black transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-foreground transition-colors"
       >
         <Icon icon={show ? "mdi:eye-off-outline" : "mdi:eye-outline"} width={18} height={18} />
       </button>
@@ -134,7 +135,8 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
     try {
       const res = await login({ email: loginEmail, password: loginPassword }).unwrap();
       dispatch(setCredentials({ user: res.data.user, token: res.data.token }));
-      router.push(res.data.user.role === "admin" ? ROUTES.ADMIN_DASHBOARD : ROUTES.HOME);
+      // Privileged users (vendor OR superadmin) go to the admin panel; everyone else home.
+      router.push(isPrivileged(res.data.user.role) ? ROUTES.ADMIN_DASHBOARD : ROUTES.HOME);
     } catch (err: any) {
       if (err.data?.needsVerification) {
         setLoginNeedsVerification(true);
@@ -178,14 +180,16 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
       </h1>
 
       {/* Toggle */}
-      <div className="flex bg-[#EDEEEF] rounded-[10px] p-1">
+      <div className="flex bg-black/5 border border-black/10 rounded-[10px] p-1">
         {(["signin", "register"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => switchTab(t)}
             className={`flex-1 py-2 font-montserrat font-medium text-[14px] leading-tight rounded-[9px] transition-all ${
-              tab === t ? "bg-white shadow-sm text-black" : "text-[#6B7280] hover:text-black"
+              tab === t
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-[#9a9aa4] hover:text-foreground"
             }`}
           >
             {t === "signin" ? "Sign in" : "Register"}
@@ -237,7 +241,7 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
           <button
             type="submit"
             disabled={isLoggingIn}
-            className="mt-6.25 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-accent mt-6.25 w-full h-11 font-montserrat font-semibold text-[16px] rounded-[8px] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
           >
             {isLoggingIn ? <><Loader2 className="w-4 h-4 animate-spin" />Signing in…</> : "Sign in"}
           </button>
@@ -300,7 +304,7 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
             <button
               type="submit"
               disabled={isRegistering}
-              className="mt-6.25 w-full h-11 bg-black text-white font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-accent mt-6.25 w-full h-11 font-montserrat font-semibold text-[16px] rounded-[8px] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
             >
               {isRegistering ? <><Loader2 className="w-4 h-4 animate-spin" />Creating account…</> : "Create Account"}
             </button>

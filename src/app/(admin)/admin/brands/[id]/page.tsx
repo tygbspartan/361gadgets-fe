@@ -21,11 +21,19 @@ import {
   Star,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 
 export default function BrandDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = parseInt(params.id as string);
+
+  // Vendors can view but not edit/delete brands.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canManage = isSuper(role);
+  const { toastError } = useToastHelpers();
 
   const { data, isLoading, error } = useGetBrandByIdQuery(id);
   const [deleteBrand, { isLoading: isDeleting }] = useDeleteBrandMutation();
@@ -41,7 +49,7 @@ export default function BrandDetailPage() {
       await deleteBrand(brand.id).unwrap();
       router.push(ROUTES.ADMIN_BRANDS);
     } catch (err: any) {
-      alert(err?.data?.message || "Failed to delete brand");
+      toastError(err?.data?.message || "Failed to delete brand");
     }
   };
 
@@ -87,25 +95,27 @@ export default function BrandDetailPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Link href={`${ROUTES.ADMIN_BRANDS}/${brand.id}/edit`}>
+        {/* Action Buttons — superadmin only */}
+        {canManage && (
+          <div className="flex gap-2">
+            <Link href={`${ROUTES.ADMIN_BRANDS}/${brand.id}/edit`}>
+              <Button
+                variant="outline"
+                className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
             <Button
-              variant="outline"
-              className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </Button>
-          </Link>
-          <Button
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation */}

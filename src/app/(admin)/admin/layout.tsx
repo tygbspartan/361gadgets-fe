@@ -1,6 +1,7 @@
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminSidebar from "@/components/layout/AdminSidebar";
 import AdminHeader from "@/components/layout/AdminHeader";
+import { ToastProvider } from "@/components/ui/ToastStack";
 
 export default function AdminLayout({
   children,
@@ -9,6 +10,7 @@ export default function AdminLayout({
 }) {
   return (
     <ProtectedRoute requireAdmin={true}>
+      <ToastProvider>
       <div className="flex h-screen overflow-hidden bg-gray-50">
         {/* Sidebar */}
         <AdminSidebar />
@@ -24,6 +26,7 @@ export default function AdminLayout({
           </main>
         </div>
       </div>
+      </ToastProvider>
     </ProtectedRoute>
   );
 }

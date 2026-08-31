@@ -29,6 +29,14 @@ const authSlice = createSlice({
         localStorage.setItem("user", JSON.stringify(action.payload.user));
       }
     },
+    // Patch the logged-in user in place (e.g. after a self-service profile update)
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (!state.user) return;
+      state.user = { ...state.user, ...action.payload };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
@@ -72,6 +80,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setLoading, initializeAuth } =
+export const { setCredentials, updateUser, logout, setLoading, initializeAuth } =
   authSlice.actions;
 export default authSlice.reducer;

@@ -35,8 +35,15 @@ import { Eye, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { Order } from "@/types/order.types";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+import { useToastHelpers } from "@/components/ui/ToastStack";
 
 export default function OrdersPage() {
+  // Only the superadmin can change order/payment status (orders are multi-vendor).
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canManage = isSuper(role);
+  const { toastSuccess, toastError } = useToastHelpers();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<Order["status"] | "">("");
   const [paymentFilter, setPaymentFilter] = useState<
@@ -132,10 +139,10 @@ export default function OrdersPage() {
       }).unwrap();
 
       // Show success message
-      alert(`Order status updated to ${newStatus}`);
+      toastSuccess(`Order status updated to ${newStatus}`);
     } catch (error: any) {
       console.error("Failed to update order status:", error);
-      alert(error?.data?.message || "Failed to update order status");
+      toastError(error?.data?.message || "Failed to update order status");
     } finally {
       setUpdatingOrderId(null);
       setUpdatingField(null);
@@ -161,10 +168,10 @@ export default function OrdersPage() {
       }).unwrap();
 
       // Show success message
-      alert(`Payment status updated to ${newPaymentStatus}`);
+      toastSuccess(`Payment status updated to ${newPaymentStatus}`);
     } catch (error: any) {
       console.error("Failed to update payment status:", error);
-      alert(error?.data?.message || "Failed to update payment status");
+      toastError(error?.data?.message || "Failed to update payment status");
     } finally {
       setUpdatingOrderId(null);
       setUpdatingField(null);
@@ -176,8 +183,12 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Orders Management</h1>
-          <p className="text-gray-600 mt-1">View and manage customer orders</p>
+          <h1 className="text-3xl font-bold">Orders</h1>
+          <p className="text-gray-600 mt-1">
+            {canManage
+              ? "View and manage all customer orders"
+              : "Orders containing your products (your items and totals only)"}
+          </p>
         </div>
       </div>
 
@@ -293,7 +304,7 @@ export default function OrdersPage() {
                     <TableHead>Order Number</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead>{canManage ? "Total" : "Your Total"}</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Payment</TableHead>
                     <TableHead>Date</TableHead>
@@ -329,88 +340,106 @@ export default function OrdersPage() {
                           {order.items.length !== 1 ? "s" : ""}
                         </TableCell>
                         <TableCell className="font-semibold">
-                          {formatCurrency(order.total)}
+                          {formatCurrency(order.vendorSubtotal ?? order.total)}
                         </TableCell>
 
-                        {/* Order Status Dropdown */}
+                        {/* Order Status — editable for superadmin, read-only for vendors */}
                         <TableCell>
-                          <Select
-                            value={order.status}
-                            onValueChange={(value) =>
-                              handleStatusChange(order.id, order.status, value)
-                            }
-                            disabled={isUpdatingStatus}
-                          >
-                            <SelectTrigger
-                              className={`w-[140px] ${getStatusColor(order.status)}`}
+                          {canManage ? (
+                            <Select
+                              value={order.status}
+                              onValueChange={(value) =>
+                                handleStatusChange(order.id, order.status, value)
+                              }
+                              disabled={isUpdatingStatus}
                             >
-                              <SelectValue>
-                                {isUpdatingStatus ? (
-                                  <span className="flex items-center gap-2">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Updating...
-                                  </span>
-                                ) : (
-                                  <span className="capitalize">
-                                    {order.status}
-                                  </span>
-                                )}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">
-                                Confirmed
-                              </SelectItem>
-                              <SelectItem value="processing">
-                                Processing
-                              </SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">
-                                Delivered
-                              </SelectItem>
-                              <SelectItem value="cancelled">
-                                Cancelled
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                              <SelectTrigger
+                                className={`w-[140px] ${getStatusColor(order.status)}`}
+                              >
+                                <SelectValue>
+                                  {isUpdatingStatus ? (
+                                    <span className="flex items-center gap-2">
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                      Updating...
+                                    </span>
+                                  ) : (
+                                    <span className="capitalize">
+                                      {order.status}
+                                    </span>
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">
+                                  Confirmed
+                                </SelectItem>
+                                <SelectItem value="processing">
+                                  Processing
+                                </SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">
+                                  Delivered
+                                </SelectItem>
+                                <SelectItem value="cancelled">
+                                  Cancelled
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge className={getStatusColor(order.status)}>
+                              <span className="capitalize">{order.status}</span>
+                            </Badge>
+                          )}
                         </TableCell>
 
-                        {/* Payment Status Dropdown */}
+                        {/* Payment Status — editable for superadmin, read-only for vendors */}
                         <TableCell>
-                          <Select
-                            value={order.paymentStatus}
-                            onValueChange={(value) =>
-                              handlePaymentStatusChange(
-                                order.id,
+                          {canManage ? (
+                            <Select
+                              value={order.paymentStatus}
+                              onValueChange={(value) =>
+                                handlePaymentStatusChange(
+                                  order.id,
+                                  order.paymentStatus,
+                                  value,
+                                )
+                              }
+                              disabled={isUpdatingPayment}
+                            >
+                              <SelectTrigger
+                                className={`w-[120px] ${getPaymentStatusColor(order.paymentStatus)}`}
+                              >
+                                <SelectValue>
+                                  {isUpdatingPayment ? (
+                                    <span className="flex items-center gap-2">
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                      Updating...
+                                    </span>
+                                  ) : (
+                                    <span className="capitalize">
+                                      {order.paymentStatus}
+                                    </span>
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="failed">Failed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge
+                              className={getPaymentStatusColor(
                                 order.paymentStatus,
-                                value,
-                              )
-                            }
-                            disabled={isUpdatingPayment}
-                          >
-                            <SelectTrigger
-                              className={`w-[120px] ${getPaymentStatusColor(order.paymentStatus)}`}
+                              )}
                             >
-                              <SelectValue>
-                                {isUpdatingPayment ? (
-                                  <span className="flex items-center gap-2">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Updating...
-                                  </span>
-                                ) : (
-                                  <span className="capitalize">
-                                    {order.paymentStatus}
-                                  </span>
-                                )}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="failed">Failed</SelectItem>
-                            </SelectContent>
-                          </Select>
+                              <span className="capitalize">
+                                {order.paymentStatus}
+                              </span>
+                            </Badge>
+                          )}
                         </TableCell>
 
                         <TableCell className="text-sm">

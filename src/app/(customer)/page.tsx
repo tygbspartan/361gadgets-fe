@@ -1,11 +1,10 @@
 "use client";
 
-import HeroSlider from "@/components/home/HeroSlider";
+import HeroSection from "@/components/home/HeroSection";
 import BrandsCarousel from "@/components/home/BrandCarousel";
 import NewArrivals from "@/components/home/NewArrivals";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import SpecialOffers from "@/components/home/SpecialOffers";
-import ShopBySkinType from "@/components/home/ShopBySkinType";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import HomepageFeatured from "@/components/home/HomepageFeatured";
 
@@ -14,10 +13,10 @@ export default function HomePage() {
     <div>
       {/* Hero — full width, pull up to cancel Navbar's mb-12.5 */}
       <div className="-mt-12.5">
-        <HeroSlider />
+        <HeroSection />
       </div>
 
-      {/* Brand marquee — full width, flush under hero */}
+      {/* Brand marquee — full width, flush under the hero */}
       <BrandsCarousel />
 
       {/* New Arrivals — 50px below brands */}
@@ -35,12 +34,7 @@ export default function HomePage() {
         <SpecialOffers limit={5} />
       </div>
 
-      {/* Shop by Skin Type — full width, 50px below special offers */}
-      <div className="mt-12.5">
-        <ShopBySkinType />
-      </div>
-
-      {/* Homepage Featured — full width, merges directly under Shop by Skin Type */}
+      {/* Homepage Featured */}
       <div>
         <HomepageFeatured />
       </div>

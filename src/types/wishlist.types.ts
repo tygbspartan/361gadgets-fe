@@ -11,7 +11,6 @@ export interface WishlistItem {
     originalPrice: string | null;
     stockQuantity: number;
     lowStockThreshold: number;
-    shortDescription: string | null;
     stockStatus?: string;
     images?: Array<{
       id: number;

@@ -13,7 +13,7 @@ export default function AuthLayout({
     <ToastProvider>
       <FlyProvider>
         <LoadingProvider>
-          <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
+          <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-1 flex items-center justify-center px-4 pb-12.5">
               {children}

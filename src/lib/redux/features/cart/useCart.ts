@@ -37,11 +37,11 @@ export function useCart() {
 
   const items = isAuthenticated ? serverItems : guestItems;
 
-  const addItem = async (product: Product, quantity = 1) => {
+  const addItem = async (product: Product, quantity = 1, colorId?: number) => {
     if (isAuthenticated) {
-      await addToCart({ productId: product.id, quantity }).unwrap();
+      await addToCart({ productId: product.id, quantity, colorId }).unwrap();
     } else {
-      dispatch(addGuestCartItem({ product, quantity }));
+      dispatch(addGuestCartItem({ product, quantity, colorId }));
     }
   };
 

@@ -7,7 +7,7 @@ import {
   useUploadProductImageMutation,
 } from "@/lib/redux/features/products/productsApi";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
-import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
+import { useGetAdminBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,18 +29,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
 
 type StagedFile = { file: File; isPrimary: boolean };
 
-const SKIN_TYPES = ["Normal", "Dry", "Oily", "Combination", "Sensitive"];
+// A color variant row in the form (stock is a string for controlled inputs).
+type ColorRow = {
+  name: string;
+  hexCode: string;
+  sku: string;
+  stockQuantity: string;
+};
 
-const SKIN_CONCERNS = [
-  "Acne & Breakouts", "Oil Control", "Large Pores", "Dryness",
-  "Dehydration", "Sensitivity & Redness", "Dark Spots & Hyperpigmentation",
-  "Uneven Skin Tone", "Dullness & Brightening", "Uneven Texture",
-  "Fine Lines & Wrinkles", "Firmness & Elasticity", "Dark Circles",
-  "Puffiness", "Sun Protection",
-];
+const emptyColor = (): ColorRow => ({
+  name: "",
+  hexCode: "",
+  sku: "",
+  stockQuantity: "",
+});
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -51,7 +58,15 @@ export default function CreateProductPage() {
   const isLoading = isCreating || isUploadingImages;
 
   const { data: categoriesData } = useGetCategoriesQuery();
-  const { data: brandsData } = useGetBrandsQuery();
+  // Scoped list: a vendor gets only their assigned brands; superadmin gets all.
+  const { data: brandsData } = useGetAdminBrandsQuery();
+
+  // Only the superadmin can feature products on the store-front.
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const canFeature = isSuper(role);
+
+  const usableBrands = brandsData?.data ?? [];
+  const hasNoBrands = usableBrands.length === 0;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -68,11 +83,18 @@ export default function CreateProductPage() {
     isActive: true,
     isFeatured: false,
     homepageFeature: false,
-    skinType: [] as string[],
-    skinConcern: [] as string[],
     metaTitle: "",
     metaDescription: "",
   });
+
+  // Optional color variants. When present, each carries its own stock and the
+  // product-level stock is the sum (computed on the server).
+  const [colors, setColors] = useState<ColorRow[]>([]);
+  const hasColors = colors.length > 0;
+  const colorsStockTotal = colors.reduce(
+    (sum, c) => sum + (parseInt(c.stockQuantity) || 0),
+    0,
+  );
 
   const [imageFiles, setImageFiles] = useState<StagedFile[]>([]);
 
@@ -88,7 +110,7 @@ export default function CreateProductPage() {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
@@ -114,7 +136,7 @@ export default function CreateProductPage() {
 
   const setPrimaryImage = (index: number) => {
     setImageFiles((prev) =>
-      prev.map((img, i) => ({ ...img, isPrimary: i === index }))
+      prev.map((img, i) => ({ ...img, isPrimary: i === index })),
     );
   };
 
@@ -144,15 +166,13 @@ export default function CreateProductPage() {
     setSpecifications((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const toggleArrayItem = (field: "skinType" | "skinConcern", value: string) => {
-    setFormData((prev) => {
-      const arr = prev[field];
-      return {
-        ...prev,
-        [field]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
-      };
-    });
-  };
+  const addColor = () => setColors((prev) => [...prev, emptyColor()]);
+  const updateColor = (index: number, field: keyof ColorRow, value: string) =>
+    setColors((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+    );
+  const removeColor = (index: number) =>
+    setColors((prev) => prev.filter((_, i) => i !== index));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,18 +183,30 @@ export default function CreateProductPage() {
       !formData.name ||
       !formData.price ||
       !formData.costPrice ||
-      !formData.stockQuantity ||
+      (!formData.stockQuantity && !hasColors) ||
       !formData.longDescription ||
       !formData.sku
     ) {
       setError(
-        "Please fill in all required fields (Name, Price, Cost Price, Stock Quantity, Long Description, SKU)"
+        "Please fill in all required fields (Name, Price, Cost Price, Stock Quantity or Colors, Long Description, SKU)",
       );
       return;
     }
     if (!formData.brandId || !formData.categoryId) {
       setError("Please select a Brand and Category");
       return;
+    }
+    if (hasColors) {
+      const invalid = colors.some(
+        (c) =>
+          !c.name.trim() ||
+          c.stockQuantity === "" ||
+          parseInt(c.stockQuantity) < 0,
+      );
+      if (invalid) {
+        setError("Each color needs a name and a valid stock quantity");
+        return;
+      }
     }
     if (imageFiles.length === 0) {
       setError("Please add at least one product image");
@@ -191,17 +223,32 @@ export default function CreateProductPage() {
           ? parseFloat(formData.originalPrice)
           : undefined,
         costPrice: parseFloat(formData.costPrice),
-        stockQuantity: parseInt(formData.stockQuantity),
+        // With colors the server derives stock from the sum; send 0 as a base.
+        stockQuantity: hasColors
+          ? colorsStockTotal
+          : parseInt(formData.stockQuantity),
         lowStockThreshold: parseInt(formData.lowStockThreshold),
         sku: formData.sku,
         brandId: parseInt(formData.brandId),
         categoryId: parseInt(formData.categoryId),
         countryOfOrigin: formData.countryOfOrigin || undefined,
         isActive: formData.isActive,
-        isFeatured: formData.isFeatured,
-        homepageFeature: formData.homepageFeature,
-        skinType: formData.skinType.length > 0 ? formData.skinType : undefined,
-        skinConcern: formData.skinConcern.length > 0 ? formData.skinConcern : undefined,
+        // Feature flags are superadmin-only; vendors never send them.
+        ...(canFeature
+          ? {
+              isFeatured: formData.isFeatured,
+              homepageFeature: formData.homepageFeature,
+            }
+          : {}),
+        colors: hasColors
+          ? colors.map((c, i) => ({
+              name: c.name.trim(),
+              hexCode: c.hexCode.trim() || undefined,
+              sku: c.sku.trim() || undefined,
+              stockQuantity: parseInt(c.stockQuantity) || 0,
+              displayOrder: i,
+            }))
+          : undefined,
         metaTitle: formData.metaTitle || undefined,
         metaDescription: formData.metaDescription || undefined,
         specifications: specifications.length > 0 ? specifications : undefined,
@@ -212,7 +259,7 @@ export default function CreateProductPage() {
       // Step 2: Upload primary image first (backend makes first upload primary),
       // then the rest
       const sorted = [...imageFiles].sort(
-        (a, b) => Number(b.isPrimary) - Number(a.isPrimary)
+        (a, b) => Number(b.isPrimary) - Number(a.isPrimary),
       );
       for (const staged of sorted) {
         const fd = new FormData();
@@ -334,15 +381,22 @@ export default function CreateProductPage() {
                   name="brandId"
                   value={formData.brandId}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={hasNoBrands}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Brand</option>
-                  {brandsData?.data.map((brand) => (
+                  {usableBrands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
                     </option>
                   ))}
                 </select>
+                {hasNoBrands && !canFeature && (
+                  <p className="text-xs text-amber-600">
+                    You have no brands assigned yet. Ask the platform admin to
+                    assign a brand before adding products.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="categoryId">
@@ -465,6 +519,97 @@ export default function CreateProductPage() {
           </CardContent>
         </Card>
 
+        {/* Color Variants */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Color Variants</CardTitle>
+            <CardDescription>
+              Optional. Add colors if this product ships in multiple colors —
+              each color tracks its own stock. Leave empty for a single-stock
+              product (uses the Inventory stock above).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {colors.length > 0 && (
+              <div className="space-y-3">
+                {colors.map((color, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end border rounded-md p-3"
+                  >
+                    <div className="md:col-span-4 space-y-1">
+                      <Label className="text-xs">
+                        Color name <span className="text-primary">*</span>
+                      </Label>
+                      <Input
+                        value={color.name}
+                        onChange={(e) =>
+                          updateColor(index, "name", e.target.value)
+                        }
+                        placeholder="e.g., Space Black"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-xs">Swatch</Label>
+                      <input
+                        type="color"
+                        value={color.hexCode || "#000000"}
+                        onChange={(e) =>
+                          updateColor(index, "hexCode", e.target.value)
+                        }
+                        className="w-full h-9 rounded border cursor-pointer"
+                      />
+                    </div>
+                    <div className="md:col-span-3 space-y-1">
+                      <Label className="text-xs">SKU</Label>
+                      <Input
+                        value={color.sku}
+                        onChange={(e) =>
+                          updateColor(index, "sku", e.target.value)
+                        }
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-xs">
+                        Stock <span className="text-primary">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={color.stockQuantity}
+                        onChange={(e) =>
+                          updateColor(index, "stockQuantity", e.target.value)
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="md:col-span-1 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeColor(index)}
+                      >
+                        <X className="h-4 w-4 text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <p className="text-sm text-muted-foreground">
+                  Total stock across colors:{" "}
+                  <span className="font-medium">{colorsStockTotal}</span> (this
+                  becomes the product stock)
+                </p>
+              </div>
+            )}
+            <Button type="button" variant="outline" onClick={addColor}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Color
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Product Images */}
         <Card>
           <CardHeader>
@@ -513,7 +658,7 @@ export default function CreateProductPage() {
                     <p className="text-sm truncate flex-1">{item.file.name}</p>
                     <div className="flex items-center gap-2 shrink-0">
                       {item.isPrimary ? (
-                        <span className="text-xs bg-primary text-white px-2 py-1 rounded">
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
                           Primary
                         </span>
                       ) : (
@@ -593,48 +738,6 @@ export default function CreateProductPage() {
           </CardContent>
         </Card>
 
-        {/* Skin Profile */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Skin Profile</CardTitle>
-            <CardDescription>Target skin types and concerns for this product</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Skin Type</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {SKIN_TYPES.map((type) => (
-                  <label key={type} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formData.skinType.includes(type)}
-                      onChange={() => toggleArrayItem("skinType", type)}
-                      className="w-4 h-4 accent-primary rounded"
-                    />
-                    <span className="text-sm">{type}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Skin Concern</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {SKIN_CONCERNS.map((concern) => (
-                  <label key={concern} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formData.skinConcern.includes(concern)}
-                      onChange={() => toggleArrayItem("skinConcern", concern)}
-                      className="w-4 h-4 accent-primary rounded"
-                    />
-                    <span className="text-sm">{concern}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* SEO */}
         <Card>
           <CardHeader>
@@ -703,42 +806,53 @@ export default function CreateProductPage() {
                 className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-md">
-              <div>
-                <Label htmlFor="isFeatured" className="text-base font-medium">
-                  Featured
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Show this product in featured section
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="isFeatured"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleInputChange}
-                className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-md">
-              <div>
-                <Label htmlFor="homepageFeature" className="text-base font-medium">
-                  Homepage Featured
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Show this product in the homepage featured section
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="homepageFeature"
-                name="homepageFeature"
-                checked={formData.homepageFeature}
-                onChange={handleInputChange}
-                className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
-              />
-            </div>
+            {/* Featured flags are curated by the platform — superadmin only. */}
+            {canFeature && (
+              <>
+                <div className="flex items-center justify-between p-4 border rounded-md">
+                  <div>
+                    <Label
+                      htmlFor="isFeatured"
+                      className="text-base font-medium"
+                    >
+                      Featured
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show this product in featured section
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="isFeatured"
+                    name="isFeatured"
+                    checked={formData.isFeatured}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-md">
+                  <div>
+                    <Label
+                      htmlFor="homepageFeature"
+                      className="text-base font-medium"
+                    >
+                      Homepage Featured
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show this product in the homepage featured section
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="homepageFeature"
+                    name="homepageFeature"
+                    checked={formData.homepageFeature}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

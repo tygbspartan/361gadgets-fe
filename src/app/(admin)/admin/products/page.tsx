@@ -3,9 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  useGetProductsQuery,
+  useGetAdminProductsQuery,
   useDeleteProductMutation,
 } from "@/lib/redux/features/products/productsApi";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+import { useToastHelpers } from "@/components/ui/ToastStack";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +29,8 @@ import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 
 export default function ProductsPage() {
+  const { toastSuccess, toastError } = useToastHelpers();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -32,7 +38,10 @@ export default function ProductsPage() {
 
   const isDiscountFilter = filter === "discount";
 
-  const { data, isLoading, error } = useGetProductsQuery({
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const showOwner = isSuper(role);
+
+  const { data, isLoading, error } = useGetAdminProductsQuery({
     page: isDiscountFilter ? 1 : page,
     limit: isDiscountFilter ? 1000 : 10,
     search: search || undefined,
@@ -60,13 +69,30 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    setDeletingIds((prev) => new Set(prev).add(id));
+    if (
+      !(await confirm({
+        title: "Delete product",
+        message: `Are you sure you want to delete "${name}"?`,
+        confirmText: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     try {
-      await deleteProduct(id).unwrap();
+      const res = await deleteProduct(id).unwrap();
+      if (res.data?.archived) {
+        // Product has orders — it was deactivated, not deleted. Keep it in the
+        // list (the invalidated query refetches it as Inactive) and inform the user.
+        toastSuccess(
+          res.message ||
+            "This product has existing orders, so it was set to Inactive instead of deleted.",
+        );
+      } else {
+        // Truly deleted — hide the row immediately (refetch removes it too).
+        setDeletingIds((prev) => new Set(prev).add(id));
+      }
     } catch (err: any) {
-      setDeletingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
-      alert(err?.data?.message || "Failed to delete product");
+      toastError(err?.data?.message || "Failed to delete product");
     }
   };
 
@@ -220,6 +246,11 @@ export default function ProductsPage() {
                       <th className="text-left py-3 px-4 font-semibold text-sm">
                         Status
                       </th>
+                      {showOwner && (
+                        <th className="text-left py-3 px-4 font-semibold text-sm">
+                          Owner
+                        </th>
+                      )}
                       <th className="text-right py-3 px-4 font-semibold text-sm">
                         Actions
                       </th>
@@ -229,7 +260,11 @@ export default function ProductsPage() {
                     {displayProducts.filter((p) => !deletingIds.has(p.id)).map((product) => (
                       <tr
                         key={product.id}
-                        className="border-b hover:bg-gray-50"
+                        className={`border-b transition-colors ${
+                          product.isActive
+                            ? "bg-gradient-to-r from-green-50/70 to-transparent hover:from-green-100"
+                            : "bg-gradient-to-r from-red-50/70 to-transparent hover:from-red-100"
+                        }`}
                       >
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
@@ -298,12 +333,21 @@ export default function ProductsPage() {
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               product.isActive
                                 ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
+                                : "bg-red-100 text-red-800"
                             }`}
                           >
                             {product.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
+                        {showOwner && (
+                          <td className="py-3 px-4">
+                            <span className="text-sm text-muted-foreground">
+                              {product.ownerId
+                                ? `Vendor #${product.ownerId}`
+                                : "Platform"}
+                            </span>
+                          </td>
+                        )}
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-end gap-2">
                             <Link href={`/admin/products/${product.id}`}>

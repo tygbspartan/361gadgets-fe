@@ -49,8 +49,6 @@ export const productsApi = createApi({
         maxPrice?: number;
         sortBy?: string;
         sortOrder?: "asc" | "desc";
-        skinType?: string;
-        skinConcern?: string;
       }
     >({
       query: (params) => {
@@ -82,12 +80,42 @@ export const productsApi = createApi({
         if (params.sortBy) searchParams.append("sortBy", params.sortBy);
         if (params.sortOrder)
           searchParams.append("sortOrder", params.sortOrder);
-        if (params.skinType)
-          searchParams.append("skinType", params.skinType);
-        if (params.skinConcern)
-          searchParams.append("skinConcern", params.skinConcern);
 
         return `${API_ENDPOINTS.PRODUCTS}?${searchParams.toString()}`;
+      },
+      providesTags: ["Products"],
+    }),
+
+    // Admin product list — ownership-scoped server-side.
+    // Vendors see only their own products; superadmin sees all and can pass
+    // ownerId to filter by a specific vendor.
+    getAdminProducts: builder.query<
+      ProductsResponse,
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        isFeatured?: boolean;
+        homepageFeature?: boolean;
+        ownerId?: number;
+      }
+    >({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params.page) searchParams.append("page", params.page.toString());
+        if (params.limit) searchParams.append("limit", params.limit.toString());
+        if (params.search) searchParams.append("search", params.search);
+        if (params.isFeatured !== undefined)
+          searchParams.append("isFeatured", params.isFeatured.toString());
+        if (params.homepageFeature !== undefined)
+          searchParams.append(
+            "homepageFeature",
+            params.homepageFeature.toString()
+          );
+        if (params.ownerId !== undefined)
+          searchParams.append("ownerId", params.ownerId.toString());
+
+        return `${API_ENDPOINTS.PRODUCTS_ADMIN}?${searchParams.toString()}`;
       },
       providesTags: ["Products"],
     }),
@@ -154,6 +182,21 @@ export const productsApi = createApi({
       providesTags: ['Products'],
     }),
 
+    // Compare up to 3 products (public). Pass an array of product ids.
+    compareProducts: builder.query<
+      { products: Product[]; specKeys: string[] },
+      number[]
+    >({
+      query: (ids) =>
+        `${API_ENDPOINTS.PRODUCTS_COMPARE}?ids=${ids.join(",")}`,
+      transformResponse: (response: {
+        status: string;
+        message: string;
+        data: { products: Product[]; specKeys: string[] };
+      }) => response.data,
+      providesTags: ["Products"],
+    }),
+
     // Create product
     createProduct: builder.mutation<
       SingleProductResponse,
@@ -180,9 +223,10 @@ export const productsApi = createApi({
       invalidatesTags: ["Products"],
     }),
 
-    // Delete product
+    // Delete product. `data.archived` is true when the product had orders and was
+    // deactivated instead of hard-deleted (so it stays in the list, inactive).
     deleteProduct: builder.mutation<
-      { status: string; message: string },
+      { status: string; message: string; data: { archived: boolean } },
       number
     >({
       query: (id) => ({
@@ -233,6 +277,7 @@ export const productsApi = createApi({
 
 export const {
   useGetProductsQuery,
+  useGetAdminProductsQuery,
   useGetFeaturedProductsQuery,
   useSearchProductsQuery,
   useGetNewArrivalsQuery,
@@ -240,6 +285,8 @@ export const {
   useGetProductByIdQuery,
   useGetProductBySlugQuery,
   useGetRelatedProductsQuery,
+  useCompareProductsQuery,
+  useLazyCompareProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,

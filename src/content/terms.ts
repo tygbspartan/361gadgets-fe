@@ -2,7 +2,7 @@ export const termsContent: { key: string; value: string }[] = [
   {
     key: "Acceptance of Terms",
     value:
-      "By accessing and using the Daily Dose website and services, you agree to be bound by these Terms and Conditions. If you do not agree to any part of these terms, you may not access or use our services. Continued use of the platform following any changes constitutes your acceptance of the revised terms.",
+      "By accessing and using the 361 Gadgets website and services, you agree to be bound by these Terms and Conditions. If you do not agree to any part of these terms, you may not access or use our services. Continued use of the platform following any changes constitutes your acceptance of the revised terms.",
   },
   {
     key: "User Accounts",
@@ -27,12 +27,12 @@ export const termsContent: { key: string; value: string }[] = [
   {
     key: "Returns and Refunds",
     value:
-      "Products may be returned within 7 days of delivery if they are unused, undamaged, and in their original packaging. Prescription medicines, opened personal care items, and perishable goods are not eligible for return. Approved refunds will be processed within 5–7 business days to the original payment method.",
+      "Products may be returned within 7 days of delivery if they are unused, undamaged, and in their original packaging. Opened or used items may not be eligible for return. Approved refunds will be processed within 5–7 business days to the original payment method.",
   },
   {
     key: "Intellectual Property",
     value:
-      "All content on this website, including but not limited to text, graphics, logos, images, and software, is the exclusive property of Daily Dose or its content suppliers and is protected by applicable intellectual property laws. You may not reproduce, distribute, or create derivative works without our prior written consent.",
+      "All content on this website, including but not limited to text, graphics, logos, images, and software, is the exclusive property of 361 Gadgets or its content suppliers and is protected by applicable intellectual property laws. You may not reproduce, distribute, or create derivative works without our prior written consent.",
   },
   {
     key: "Prohibited Conduct",
@@ -42,11 +42,11 @@ export const termsContent: { key: string; value: string }[] = [
   {
     key: "Limitation of Liability",
     value:
-      "Daily Dose shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of, or inability to use, our services or products. Our total liability to you for any claim arising from these terms shall not exceed the amount paid by you for the relevant transaction.",
+      "361 Gadgets shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of, or inability to use, our services or products. Our total liability to you for any claim arising from these terms shall not exceed the amount paid by you for the relevant transaction.",
   },
   {
     key: "Governing Law",
     value:
-      "These Terms and Conditions shall be governed by and construed in accordance with the laws of Nepal. Any disputes arising out of or in connection with these terms shall be subject to the exclusive jurisdiction of the courts of Kathmandu, Nepal. These terms constitute the entire agreement between you and Daily Dose.",
+      "These Terms and Conditions shall be governed by and construed in accordance with the laws of Nepal. Any disputes arising out of or in connection with these terms shall be subject to the exclusive jurisdiction of the courts of Kathmandu, Nepal. These terms constitute the entire agreement between you and 361 Gadgets.",
   },
 ];

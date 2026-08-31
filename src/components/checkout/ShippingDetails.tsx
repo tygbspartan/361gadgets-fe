@@ -252,7 +252,7 @@ export default function ShippingDetails({
           value={paymentMethod}
           onValueChange={(v) => onPaymentMethodChange(v as "cod" | "qr")}
         >
-          <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg mb-3 hover:border-black transition-colors cursor-pointer">
+          <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg mb-3 hover:border-primary transition-colors cursor-pointer">
             <RadioGroupItem value="cod" id="cod" />
             <label htmlFor="cod" className="flex-1 cursor-pointer flex items-center gap-3">
               <Icon icon="iconoir:wallet" width={20} height={20} className="text-gray-600 shrink-0" />
@@ -267,7 +267,7 @@ export default function ShippingDetails({
             </label>
           </div>
 
-          <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-black transition-colors cursor-pointer">
+          <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-primary transition-colors cursor-pointer">
             <RadioGroupItem value="qr" id="qr" className="mt-0.75" />
             <label htmlFor="qr" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-3">
