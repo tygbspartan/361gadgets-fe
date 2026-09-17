@@ -11,6 +11,7 @@ export interface Brand {
   isActive: boolean;
   metaTitle: string | null;
   metaDescription: string | null;
+  seoDescription: string | null;
   /** Vendor this brand is reserved for. null = unclaimed. */
   ownerId: number | null;
   createdAt: string;
@@ -46,6 +47,7 @@ export interface UpdateBrandRequest {
   isActive?: boolean;
   metaTitle?: string;
   metaDescription?: string;
+  seoDescription?: string;
 }
 
 export const brandsApi = createApi({

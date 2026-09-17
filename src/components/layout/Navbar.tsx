@@ -57,6 +57,12 @@ export default function Navbar() {
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0) || 0;
   const wishlistCount = wishlistItems.length || 0;
 
+  // Counts come from client-only state (persisted guest items or an auth-gated
+  // query), so they differ between SSR and the first client render. Gate the
+  // badges on mount to keep hydration consistent.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -312,7 +318,7 @@ export default function Navbar() {
                   className="flex items-center text-primary relative"
                 >
                   <Icon icon="mdi:heart-outline" className="w-5.5 h-5.5 lg:w-6 lg:h-6" />
-                  {wishlistCount > 0 && (
+                  {mounted && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
                       {wishlistCount > 9 ? "9+" : wishlistCount}
                     </span>
@@ -327,7 +333,7 @@ export default function Navbar() {
                   className="relative flex items-center"
                 >
                   <Icon icon="mdi:shopping-outline" className="w-5.5 h-5.5 lg:w-6 lg:h-6" />
-                  {cartItemCount > 0 && (
+                  {mounted && cartItemCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
                       {cartItemCount > 9 ? "9+" : cartItemCount}
                     </span>
@@ -471,7 +477,7 @@ export default function Navbar() {
                     {shownCategory?.children?.map((level2) => (
                       <div key={level2.id} className="w-48">
                         <Link
-                          href={`${ROUTES.PRODUCTS}?category=${level2.slug}`}
+                          href={`${ROUTES.CATEGORY}/${level2.slug}`}
                           className="group/col inline-flex items-center gap-1.5 text-[15px] font-semibold uppercase tracking-[0.06em] text-white transition-colors hover:text-white/60"
                         >
                           {level2.name}
@@ -482,7 +488,7 @@ export default function Navbar() {
                             {level2.children.map((level3) => (
                               <li key={level3.id}>
                                 <Link
-                                  href={`${ROUTES.PRODUCTS}?category=${level3.slug}`}
+                                  href={`${ROUTES.CATEGORY}/${level3.slug}`}
                                   className="block text-[14px] text-white/55 transition-colors hover:text-white"
                                 >
                                   {level3.name}
@@ -528,7 +534,7 @@ export default function Navbar() {
                               {level2.children?.map((level3) => (
                                 <Link
                                   key={level3.id}
-                                  href={`${ROUTES.PRODUCTS}?category=${level3.slug}`}
+                                  href={`${ROUTES.CATEGORY}/${level3.slug}`}
                                   className="block px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md"
                                   onClick={() => setMobileMenuOpen(false)}
                                 >

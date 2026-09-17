@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 
 interface Brand {
@@ -16,6 +16,8 @@ interface Props {
   maxPrice?: number;
   onPriceChange: (min?: number, max?: number) => void;
   variant?: "sidebar" | "sheet";
+  // Hidden on brand pages, where the brand is already fixed by the route.
+  showBrandFilter?: boolean;
 }
 
 export default function ProductFilters({
@@ -24,8 +26,10 @@ export default function ProductFilters({
   maxPrice,
   onPriceChange,
   variant = "sidebar",
+  showBrandFilter = true,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [priceMin, setPriceMin] = useState(minPrice?.toString() || "");
@@ -45,7 +49,7 @@ export default function ProductFilters({
       params.set("brand", slug);
     }
     params.delete("page");
-    router.push(`/products?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const handlePriceFilter = () => {
@@ -61,10 +65,12 @@ export default function ProductFilters({
     !!maxPrice;
 
   const clearFilters = () => {
-    router.push("/products");
+    // Reset price first, then navigate — the final router.push wins, so the URL
+    // ends up clean even on collection pages where onPriceChange also navigates.
     onPriceChange(undefined, undefined);
     setPriceMin("");
     setPriceMax("");
+    router.push(pathname);
   };
 
   // Collapsible section header + option list (used by Brand / Skin Type / Skin Concern).
@@ -165,25 +171,29 @@ export default function ProductFilters({
       </div>
 
       {/* Brands */}
-      <div className="border-t-[0.5px] border-t-[#B1A6A6]" />
-      {section(
-        "brand",
-        "Brand",
-        <ul className="flex flex-col">
-          {brands.map((brand) => {
-            const isActive = searchParams.get("brand") === brand.slug;
-            return (
-              <li key={brand.id}>
-                <button
-                  onClick={() => handleBrandClick(brand.slug)}
-                  className={optionClass(isActive)}
-                >
-                  {brand.name}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {showBrandFilter && (
+        <>
+          <div className="border-t-[0.5px] border-t-[#B1A6A6]" />
+          {section(
+            "brand",
+            "Brand",
+            <ul className="flex flex-col">
+              {brands.map((brand) => {
+                const isActive = searchParams.get("brand") === brand.slug;
+                return (
+                  <li key={brand.id}>
+                    <button
+                      onClick={() => handleBrandClick(brand.slug)}
+                      className={optionClass(isActive)}
+                    >
+                      {brand.name}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

@@ -53,6 +53,7 @@ export default function EditBrandPage() {
     description: "",
     metaTitle: "",
     metaDescription: "",
+    seoDescription: "",
     isFeatured: false,
     isActive: true,
   });
@@ -75,6 +76,7 @@ export default function EditBrandPage() {
         description: brand.description || "",
         metaTitle: brand.metaTitle || "",
         metaDescription: brand.metaDescription || "",
+        seoDescription: brand.seoDescription || "",
         isFeatured: brand.isFeatured ?? false,
         isActive: brand.isActive ?? true,
       });
@@ -135,6 +137,7 @@ export default function EditBrandPage() {
           description: formData.description || undefined,
           metaTitle: formData.metaTitle || undefined,
           metaDescription: formData.metaDescription || undefined,
+          seoDescription: formData.seoDescription || undefined,
           isFeatured: formData.isFeatured,
           isActive: formData.isActive,
         },
@@ -396,6 +399,21 @@ export default function EditBrandPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Recommended: 150-160 characters
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seoDescription">Brand page copy (SEO)</Label>
+              <textarea
+                id="seoDescription"
+                name="seoDescription"
+                value={formData.seoDescription}
+                onChange={handleInputChange}
+                placeholder="Long-form intro shown above the product grid on the brand page…"
+                className="w-full min-h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                150–250 words recommended. Shown to shoppers and search engines; left blank shows nothing.
               </p>
             </div>
           </CardContent>

@@ -26,6 +26,12 @@ export default function CartFlyout({ open, onClose }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [localQuantities, setLocalQuantities] = useState<Record<number, number>>({});
 
+  // Cart state (auth flag + guest items) is client-only, so SSR and the first
+  // client render disagree. Show the neutral loading branch until mounted so
+  // hydration matches, then swap to real content.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Sync local quantities from server whenever cartItems changes.
   // Server data is always authoritative here — it only arrives after the API responds,
   // so by the time this runs the value is correct. The optimistic update in changeQty
@@ -121,7 +127,7 @@ export default function CartFlyout({ open, onClose }: Props) {
 
         {/* ── Body ── */}
         <div className="flex-1 min-h-0 overflow-y-auto py-4 px-6 space-y-5">
-          {isLoading ? (
+          {!mounted || isLoading ? (
             <p className="text-sm text-gray-500 text-center mt-10">Loading…</p>
           ) : cartItems.length === 0 ? (
             <EmptyState

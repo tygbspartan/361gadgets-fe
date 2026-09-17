@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 
 export default function ProductSort() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const currentSort = searchParams.get("sortBy") || "createdAt";
@@ -17,7 +18,7 @@ export default function ProductSort() {
     params.set("sortBy", sortBy);
     params.set("sortOrder", sortOrder);
     params.delete("page");
-    router.push(`/products?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (

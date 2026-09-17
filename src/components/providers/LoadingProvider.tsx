@@ -61,9 +61,13 @@ export default function LoadingProvider({
     return () => clearTimeout(id);
   }, [target, shown]);
 
-  if (!isReady) {
-    return <PageLoader progress={shown} />;
-  }
-
-  return <>{children}</>;
+  // Render children always so their server-rendered HTML is in the initial
+  // response (crawlable, and present at hydration); PageLoader is a fixed
+  // overlay shown on top until the preload queries resolve.
+  return (
+    <>
+      {children}
+      {!isReady && <PageLoader progress={shown} />}
+    </>
+  );
 }

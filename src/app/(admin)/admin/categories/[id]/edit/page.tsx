@@ -36,6 +36,7 @@ export default function EditCategoryPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    seoDescription: "",
     level: "1",
     parentId: "",
     displayOrder: "0",
@@ -53,6 +54,7 @@ export default function EditCategoryPage() {
       setFormData({
         name: category.name || "",
         description: category.description || "",
+        seoDescription: category.seoDescription || "",
         level: category.level.toString(),
         parentId: category.parentId?.toString() || "",
         displayOrder: category.displayOrder?.toString() || "0",
@@ -151,6 +153,7 @@ export default function EditCategoryPage() {
       const categoryUpdateData = {
         name: formData.name,
         description: formData.description || undefined,
+        seoDescription: formData.seoDescription || undefined,
         parentId: formData.parentId ? parseInt(formData.parentId) : undefined,
         displayOrder: parseInt(formData.displayOrder),
         isActive: formData.isActive,
@@ -274,6 +277,22 @@ export default function EditCategoryPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Optional category description
+              </p>
+            </div>
+
+            {/* SEO page copy */}
+            <div className="space-y-2">
+              <Label htmlFor="seoDescription">Category page copy (SEO)</Label>
+              <textarea
+                id="seoDescription"
+                name="seoDescription"
+                value={formData.seoDescription}
+                onChange={handleInputChange}
+                placeholder="Long-form intro shown above the product grid on the category page…"
+                className="w-full min-h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                150–250 words recommended. Shown to shoppers and search engines; left blank shows nothing.
               </p>
             </div>
           </CardContent>

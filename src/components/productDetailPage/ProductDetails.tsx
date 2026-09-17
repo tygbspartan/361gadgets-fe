@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { Product } from "@/types/product.types";
@@ -21,10 +21,15 @@ export default function ProductDetails({
 }: Props) {
   const { addItem: addToCart } = useCart();
   const { isInWishlist: isInWishlistFn, addItem: addToWishlist } = useWishlist();
-  const isInWishlist = isInWishlistFn(product.id);
   const { flyToCart, flyToWishlist } = useFly();
   const { showToast } = useToast();
   const mainImgRef = useRef<HTMLDivElement>(null);
+
+  // Wishlist membership is client-only state; gate it on mount so the SSR'd
+  // heart (outline) matches the client's first render, then reflect reality.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isInWishlist = mounted && isInWishlistFn(product.id);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);

@@ -29,6 +29,12 @@ export default function WishlistFlyout({ open, onClose }: Props) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Wishlist state (auth flag + guest items) is client-only, so the server and
+  // the client's first render disagree. Render the neutral loading branch until
+  // mounted so hydration matches, then swap to the real content.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) {
       setSelectedIds(new Set());
@@ -119,7 +125,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
 
         {/* ── Body — scrollable ── */}
         <div className="flex-1 min-h-0 overflow-y-auto py-4 px-6 space-y-5">
-          {isLoading ? (
+          {!mounted || isLoading ? (
             <p className="text-sm text-gray-500 text-center mt-10">Loading…</p>
           ) : wishlistItems.length === 0 ? (
             <EmptyState

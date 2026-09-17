@@ -1,125 +1,126 @@
-"use client";
-
-import { useEffect, Suspense } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
-import { setActiveCategorySlug } from "@/lib/redux/features/ui/uiSlice";
-import { useGetProductBySlugQuery, useGetRelatedProductsQuery } from "@/lib/redux/features/products/productsApi";
-import { useGetProductReviewsQuery } from "@/lib/redux/features/reviews/reviewsApi";
-import { useGetUserOrdersQuery } from "@/lib/redux/features/orders/ordersApi";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
-import Spinner from "@/components/ui/Spinner";
+import { getProductBySlug, getProductReviews, getRelatedProducts } from "@/lib/server/catalog";
+import { buildProductJsonLd, buildBreadcrumbJsonLd, SITE_URL } from "@/lib/seo/jsonld";
 import ProductDetails from "@/components/productDetailPage/ProductDetails";
 import ProductSpecifications from "@/components/productDetailPage/ProductSpecifications";
 import SimilarProducts from "@/components/productDetailPage/SimilarProducts";
 import ProductReviewsList from "@/components/productDetailPage/ProductReviewsList";
-import WriteReview from "@/components/productDetailPage/WriteReview";
+import ProductReviewsInteractive from "@/components/productDetailPage/ProductReviewsInteractive";
 
-function ProductDetailContent() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+// ── SEO metadata (shares the cached product fetch with the page) ──────────────
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return {};
 
-  const { data, isLoading, error } = useGetProductBySlugQuery(slug);
-  const product = data?.data;
+  const title = product.metaTitle?.trim() || product.name;
+  const description =
+    product.metaDescription?.trim() ||
+    product.longDescription?.trim() ||
+    `Buy ${product.name} online at 361 Gadgets — genuine tech, delivered across Nepal.`;
+  const primaryImage =
+    product.images?.find((i) => i.isPrimary)?.imageUrl ?? product.images?.[0]?.imageUrl;
 
-  const { data: reviewsData, refetch: refetchReviews } = useGetProductReviewsQuery(
-    { productId: product?.id ?? 0 },
-    { skip: !product?.id }
-  );
+  return {
+    title,
+    description,
+    alternates: { canonical: `/product/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `/product/${slug}`,
+      type: "website",
+      images: primaryImage ? [{ url: primaryImage }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: primaryImage ? [primaryImage] : undefined,
+    },
+  };
+}
 
-  const l3CategoryId = product?.categoryId ?? 0;
-  const parentCategoryId = product?.category?.parentId ?? 0;
-
-  const { data: l3Products = [], isFetching: l3Fetching } = useGetRelatedProductsQuery(
-    { categoryId: l3CategoryId, currentProductId: product?.id ?? 0, limit: 4 },
-    { skip: !l3CategoryId }
-  );
-
-  const needsL2Fallback = !l3Fetching && l3Products.length === 0 && !!parentCategoryId;
-
-  const { data: l2Products = [] } = useGetRelatedProductsQuery(
-    { categoryId: parentCategoryId, currentProductId: product?.id ?? 0, limit: 4 },
-    { skip: !needsL2Fallback }
-  );
-
-  const fbtProducts = l3Products.length > 0 ? l3Products : l2Products;
-
-  const { data: ordersData } = useGetUserOrdersQuery(
-    { page: 1, limit: 200 },
-    { skip: !isAuthenticated || !product?.id }
-  );
-
-  const hasPurchased = ordersData?.orders.some((order) =>
-    order.status !== "cancelled" &&
-    order.items.some((item) => item.productId === product?.id)
-  ) ?? false;
-
-  useEffect(() => {
-    if (product?.category?.slug) {
-      dispatch(setActiveCategorySlug(product.category.slug));
-    }
-    return () => { dispatch(setActiveCategorySlug(null)); };
-  }, [product?.category?.slug, dispatch]);
-
-  if (isLoading) return <Spinner className="min-h-[60vh]" />;
-
-  if (error || !product) {
-    return (
-      <div className="page-wrapper pb-16 text-center">
-        <h1 className="font-montserrat text-2xl font-semibold mb-4">Product Not Found</h1>
-        <p className="text-gray-600 mb-6">The product you&apos;re looking for doesn&apos;t exist.</p>
-        <Link
-          href={ROUTES.PRODUCTS}
-          className="inline-block bg-primary text-primary-foreground font-inter font-medium px-8 py-3 rounded-[3px] hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
-        >
-          Browse All Products
-        </Link>
-      </div>
-    );
+// Category chain (L1 → L2 → L3) from the product's category parent chain.
+type CatNode = { name: string; slug: string; parent?: CatNode | null };
+function buildChain(cat: CatNode | null | undefined) {
+  const chain: { name: string; slug: string }[] = [];
+  let c = cat;
+  while (c) {
+    chain.unshift({ name: c.name, slug: c.slug });
+    c = c.parent ?? null;
   }
+  return chain;
+}
 
-  const hasReviewed =
-    reviewsData?.reviews?.some((r) => r.userId === user?.id) ?? false;
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) notFound();
+
+  const [reviewData, related] = await Promise.all([
+    getProductReviews(product.id),
+    getRelatedProducts(
+      product.categoryId ?? null,
+      (product.category as unknown as { parentId?: number | null })?.parentId ?? null,
+      product.id
+    ),
+  ]);
+
+  const { reviews, summary } = reviewData;
+  const reviewerIds = reviews.map((r) => r.userId);
+
+  const chain = buildChain(product.category as unknown as CatNode);
+  const productUrl = `${SITE_URL}/product/${slug}`;
+
+  const productJsonLd = buildProductJsonLd(product, {
+    url: productUrl,
+    averageRating: summary.averageRating,
+    reviewCount: summary.totalReviews,
+  });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: SITE_URL },
+    ...chain.map((c) => ({
+      name: c.name,
+      url: `${SITE_URL}${ROUTES.CATEGORY}/${c.slug}`,
+    })),
+    { name: product.name, url: productUrl },
+  ]);
 
   return (
     <div className="page-wrapper space-y-12.5">
-      <ProductDetails
-        product={product}
-        summary={reviewsData?.summary}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
+      <ProductDetails product={product} summary={summary} />
 
       <ProductSpecifications product={product} />
 
-      <SimilarProducts
-        products={fbtProducts}
-      />
+      <SimilarProducts products={related} />
 
-      <ProductReviewsList
-        reviews={reviewsData?.reviews ?? []}
-      />
+      <ProductReviewsList reviews={reviews} />
 
-      {hasPurchased && (
-        <div id="write-review">
-          <WriteReview
-            productId={product.id}
-            isAuthenticated={isAuthenticated}
-            onReviewSubmitted={refetchReviews}
-            hasReviewed={hasReviewed}
-          />
-        </div>
-      )}
+      <ProductReviewsInteractive
+        productId={product.id}
+        reviewerIds={reviewerIds}
+        categorySlug={product.category?.slug ?? null}
+      />
     </div>
-  );
-}
-
-export default function ProductDetailPage() {
-  return (
-    <Suspense fallback={<Spinner className="min-h-[60vh]" />}>
-      <ProductDetailContent />
-    </Suspense>
   );
 }
