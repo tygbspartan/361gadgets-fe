@@ -15,7 +15,7 @@ import {
 export const reviewsApi = createApi({
   reducerPath: "reviewsApi",
   baseQuery: baseQueryWithAuth,
-  tagTypes: ["Reviews", "Review", "ProductReviews", "MyReviews"],
+  tagTypes: ["Reviews", "Review", "ProductReviews", "MyReviews", "ReviewEligibility"],
   endpoints: (builder) => ({
     // ========== ADMIN ENDPOINTS (Already exist) ==========
 
@@ -83,6 +83,22 @@ export const reviewsApi = createApi({
       ],
     }),
 
+    // Can the signed-in customer review this product (a delivered order
+    // containing it), and have they already? userId is there only for the cache
+    // key, so a different account on the same tab never gets a cached answer.
+    getReviewEligibility: builder.query<
+      { canReview: boolean; hasReviewed: boolean },
+      { productId: number; userId: number }
+    >({
+      query: ({ productId }) => `/reviews/product/${productId}/eligibility`,
+      transformResponse: (response: {
+        data: { canReview: boolean; hasReviewed: boolean };
+      }) => response.data,
+      providesTags: (result, error, { productId }) => [
+        { type: "ReviewEligibility", id: productId },
+      ],
+    }),
+
     // Create review (Customer)
     createReview: builder.mutation<Review, CreateReviewDto>({
       query: (data) => ({
@@ -94,6 +110,7 @@ export const reviewsApi = createApi({
       invalidatesTags: (result, error, { productId }) => [
         "MyReviews",
         { type: "ProductReviews", id: productId },
+        { type: "ReviewEligibility", id: productId },
       ],
     }),
 
@@ -145,6 +162,7 @@ export const reviewsApi = createApi({
       invalidatesTags: (result, error, { productId }) => [
         "MyReviews",
         { type: "ProductReviews", id: productId },
+        { type: "ReviewEligibility", id: productId },
       ],
     }),
 
@@ -180,6 +198,7 @@ export const {
 
   // Customer hooks
   useGetProductReviewsQuery,
+  useGetReviewEligibilityQuery,
   useCreateReviewMutation,
   useCreateFollowupMutation,
   useGetMyReviewsQuery,

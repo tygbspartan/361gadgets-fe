@@ -1,113 +1,127 @@
-import Link from "next/link";
 import Image from "next/image";
-import { ROUTES } from "@/constants/routes";
+import { Icon } from "@iconify/react";
 import { BRAND } from "@/config/brand";
+import FooterSitemap from "@/components/layout/FooterSitemap";
 
-// Poppins is the body default font, so we only set weight/size/spacing here.
-const headingClass =
-  "font-medium text-[14px] lg:text-[16px] leading-none tracking-[0.01em] text-white";
-const linkClass =
-  "font-medium text-[14px] lg:text-[16px] leading-none tracking-[0.01em] text-gray-400 transition-colors hover:text-white";
+const CONTACT = {
+  address: "Kalopul, Kathmandu",
+  phone: { label: "+977 976-8988420", tel: "+9779768988420" },
+  email: "361gadgets.np@gmail.com",
+};
 
-const socialLinks = [
-  { label: "Instagram", href: "https://www.instagram.com/361gadgets_np/" },
-  { label: "Tiktok", href: "https://www.tiktok.com/@361gadgets.np" },
-  { label: "Facebook", href: "https://www.facebook.com/np.361gadgets" },
+const SOCIALS = [
+  { label: "Instagram", href: "https://www.instagram.com/361gadgets_np/", icon: "mdi:instagram" },
+  { label: "TikTok", href: "https://www.tiktok.com/@361gadgets.np", icon: "ic:baseline-tiktok" },
+  { label: "Facebook", href: "https://www.facebook.com/np.361gadgets", icon: "mdi:facebook" },
 ];
 
-const legalLinks = [
-  { label: "Policies", href: ROUTES.POLICIES },
-  { label: "Terms and Condition", href: ROUTES.TERMS },
-];
+/* The studio that built the site, credited in the bottom bar. */
+const FIBISPACE_URL = "https://fibispace.com";
+
+const headingClass = "font-montserrat text-xl font-medium text-gray-200 lg:text-[22px]";
 
 export default function Footer() {
   return (
-    /* Deliberately the one dark surface on a light site — it anchors the page
-       and is where BRAND.logo.secondary (the white wordmark) belongs. Ink here
-       is inverted, so `primary` must not be used for text inside it. */
-    <footer className="bg-(--chrome-dark) text-white">
-      <div className="page-wrapper pt-12 pb-8">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* 361 Gadgets info */}
-          <div className="max-w-md">
-            <Image
-              src={BRAND.logo.secondary}
-              alt={BRAND.name}
-              width={200}
-              height={65}
-              priority={false}
-              className="w-29.5 h-auto lg:w-auto lg:h-16.25"
-            />
-            <p className="mt-2.5 font-normal text-[14px] lg:text-[16px] leading-7.5 text-gray-400">
-              {BRAND.description}
-            </p>
-          </div>
+    /*
+     * The one dark surface on a light site. At least one screen tall with the
+     * content centred, so the bottom of every page ends on a full-screen
+     * footer. Navbar finds it by id and fades itself out once the footer
+     * reaches it, so nothing sits on top of it.
+     *
+     * Below md everything is centred in one column; from md it's two columns,
+     * left-aligned.
+     */
+    <footer id="site-footer" className="flex min-h-dvh flex-col bg-(--chrome-dark) text-gray-400">
+      {/* Top padding keeps the wordmark clear of the navbar, which stays over
+          the footer as just the (white) logo — see stepAside in Navbar. */}
+      <div className="page-wrapper @container flex flex-1 flex-col justify-center pt-20 text-center md:text-left lg:pt-28 short:lg:pt-24">
+        {/* The wordmark, spanning the content width at every size: the text
+            is ~6.8em wide in Montserrat ExtraBold, so 14.5% of the container
+            width would fill it; 11% keeps it to about three-quarters. On very short windows it's also capped by the
+            height left after the rest of the footer (~33rem), so the footer
+            still fits one screen. Decorative: the name is in the copyright. */}
+        <p
+          aria-hidden
+          className="font-montserrat text-[min(11cqw,calc((100dvh-33rem)/0.85))] font-extrabold uppercase leading-[0.85] tracking-tight whitespace-nowrap text-white"
+        >
+          361 Gadgets
+        </p>
 
-          {/* Links */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {/* Social Media */}
-            <div>
-              <h4 className={headingClass}>Social Media</h4>
-              <ul className="flex flex-col gap-2.5 mt-3.75">
-                {socialLinks.map((item) => (
-                  <li key={item.label}>
+        <p className="mt-6 font-inter text-sm text-gray-400 lg:text-base short:mt-4">
+          {BRAND.description.trim()}
+        </p>
+
+        <hr className="mt-8 border-white/15 lg:mt-10 short:mt-6 short:lg:mt-6" />
+
+        <div className="grid gap-12 py-10 md:grid-cols-2 short:gap-8 short:py-6">
+          <section>
+            <h2 className={headingClass}>Get in touch</h2>
+            <address className="mt-6 space-y-1.5 font-inter text-base not-italic">
+              <p>{CONTACT.address}</p>
+              <p>
+                <a
+                  href={`tel:${CONTACT.phone.tel}`}
+                  data-cursor="Call us"
+                  className="whitespace-nowrap transition-colors hover:text-white"
+                >
+                  {CONTACT.phone.label}
+                </a>
+              </p>
+              <a
+                href={`mailto:${CONTACT.email}`}
+                data-cursor="Email us"
+                className="mx-auto block w-fit transition-colors hover:text-white md:mx-0"
+              >
+                {CONTACT.email}
+              </a>
+            </address>
+          </section>
+
+          <div className="space-y-10 short:space-y-6">
+            <section>
+              <h2 className={headingClass}>Sitemap</h2>
+              <FooterSitemap />
+            </section>
+
+            <section>
+              <h2 className={headingClass}>Follow us on</h2>
+              <ul className="mt-6 flex flex-wrap justify-center gap-6 sm:gap-8 md:justify-start">
+                {SOCIALS.map(({ label, href, icon }) => (
+                  <li key={label}>
                     <a
-                      href={item.href}
+                      href={href}
+                      aria-label={label}
+                      title={label}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={linkClass}
+                      className="block text-white transition-opacity hover:opacity-70"
                     >
-                      {item.label}
+                      <Icon icon={icon} className="size-7" aria-hidden />
                     </a>
                   </li>
                 ))}
               </ul>
-            </div>
-
-            {/* Legal Information */}
-            <div>
-              <h4 className={headingClass}>Legal Information</h4>
-              <ul className="flex flex-col gap-2.5 mt-3.75">
-                {legalLinks.map((item) => (
-                  <li key={item.label}>
-                    <Link href={item.href} className={linkClass}>
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contacts */}
-            <div>
-              <h4 className={headingClass}>Contacts</h4>
-              <ul className="flex flex-col gap-2.5 mt-3.75">
-                <li className={linkClass}>Kalopul, Kathmandu</li>
-                <li>
-                  <a href="tel:+9779768988420" className={linkClass}>
-                    +977 976-8988420
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:361gadgets.np@gmail.com" className={linkClass}>
-                    361gadgets.np@gmail.com
-                  </a>
-                </li>
-              </ul>
-            </div>
+            </section>
           </div>
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="page-wrapper pb-3.75 flex flex-col lg:flex-row lg:justify-center lg:gap-1">
-        <p className="text-center font-normal text-[12px] leading-none text-white">
-          © 2026 361 Gadgets. All rights reserved.
+      {/* Copyright and the site credit: side by side with a divider on wider
+          screens, one above the other on phones. */}
+      <div className="flex flex-col items-center justify-center gap-2 px-4 pt-6 pb-8 text-center font-inter short:pt-4 short:pb-5 text-sm text-gray-400 sm:flex-row sm:gap-4 sm:text-base">
+        <p>
+          All Rights Reserved @{new Date().getFullYear()} {BRAND.name}.
         </p>
-        <p className="text-center font-normal text-[12px] leading-none text-white mt-1 lg:mt-0">
-          Developed by{" "}
-          <span className="text-white">Fibi Space</span>.
-        </p>
+        <span aria-hidden className="hidden h-4 w-px bg-white/25 sm:block" />
+        <a
+          href={FIBISPACE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-sm outline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+        >
+          Powered by Fibispace
+          <Image src="/fibispace-logo.png" alt="" width={868} height={866} sizes="16px" className="size-4" />
+        </a>
       </div>
     </footer>
   );

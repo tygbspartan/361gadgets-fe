@@ -183,12 +183,41 @@ export const getAllBrandSlugs = () =>
       .map((b: any) => ({ slug: b.slug, updatedAt: b.updatedAt }))
   );
 
-export const getAllProductSlugs = () =>
-  getAllSlugs("/products?limit=5000&isActive=true", (j) =>
-    (j?.data?.data ?? [])
-      .filter((p: any) => p?.slug)
-      .map((p: any) => ({ slug: p.slug, updatedAt: p.updatedAt }))
-  );
+/* The API caps a page at 100 products, so the sitemap walks the pages. The
+   first page reports totalPages; the rest are fetched in parallel. */
+const SITEMAP_PAGE_SIZE = 100;
+
+export async function getAllProductSlugs(): Promise<{ slug: string; updatedAt?: string }[]> {
+  type SlugsPage = {
+    data?: {
+      data?: { slug?: string; updatedAt?: string }[];
+      pagination?: { totalPages?: number };
+    };
+  };
+  const toSlugs = (j: SlugsPage) =>
+    (j?.data?.data ?? []).flatMap((p) =>
+      p?.slug ? [{ slug: p.slug, updatedAt: p.updatedAt }] : []
+    );
+  const pagePath = (page: number) =>
+    `/products?limit=${SITEMAP_PAGE_SIZE}&page=${page}&isActive=true`;
+
+  try {
+    const base = await serverApiBase();
+    const res = await fetch(`${base}${pagePath(1)}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const first: SlugsPage = await res.json();
+    const totalPages = first?.data?.pagination?.totalPages ?? 1;
+
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) =>
+        getAllSlugs(pagePath(i + 2), toSlugs)
+      )
+    );
+    return [...toSlugs(first), ...rest.flat()];
+  } catch {
+    return [];
+  }
+}
 
 // Related products for the "Similar Products" grid: same L3 category, falling
 // back to the L2 parent, excluding the current product. 361 filters by

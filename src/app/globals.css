@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Short windows (e.g. a 1280×720 laptop): used to tighten full-screen
+   sections, like the footer, so they still fit in one screen. */
+@custom-variant short (@media (max-height: 800px));
+
 /* ============================================================================
    LIGHT THEME — monochrome
    Greyscale only; hue is reserved for meaning (success, failure, discount).
@@ -76,29 +80,24 @@
   --elev-2: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 4px 12px -2px rgb(0 0 0 / 0.08);
   --elev-3: 0 4px 8px -2px rgb(0 0 0 / 0.08), 0 12px 28px -6px rgb(0 0 0 / 0.14);
 
-  /* Total height of the sticky navbar. The hero subtracts this so its scroll
-     cue lands just above the fold instead of below it. Keep in sync with
-     .nav-top-bar (91px) plus the 62px category strip that appears at lg. */
-  --nav-h: 56px;
+  /* Total height of the sticky navbar (top bar + category strip); the hero
+     subtracts it to end exactly at the fold. Navbar overwrites this with the
+     measured height once it mounts — these are the pre-hydration fallbacks:
+     48px below lg, 91px top bar + 62px category strip at lg. */
+  --nav-h: 48px;
 
   /* How far the section below rides up over the hero. The hero adds this back
      to its own height so the two still fill exactly one screen between them.
-     The hero's scroll cue also has to clear it — see CUE_DEPTH there. */
+     The hero pads its bottom by this so the scroll cue stays clear of it. */
   --hero-overlap: 40px;
 
-  /* The one dark chrome surface colour: category bar, mega panel, footer — and
-     the top of the hero gradient, which has to match the category bar exactly
-     or a seam appears between them. Shared so the two cannot drift apart. */
+  /* The one dark chrome surface colour: category bar, mega panel, footer.
+     Shared so they cannot drift apart. */
   --chrome-dark: #0f0f0f;
 
-  /* Opacity of the disc watermark. */
-  --mark-alpha: 0.04;
-
-  /* Hero stage gradient, running dark at the top to a little lighter at the
-     bottom. --hero-grad-to is the knob: raise it for a more pronounced lift, or
-     set it to --chrome-dark for a flat surface. */
-  --hero-grad-from: var(--chrome-dark);
-  --hero-grad-to: #212121;
+  /* The one accent hue (deep crimson): the hero's full stop, its circuit spotlight and the
+     cursor follower. */
+  --brand-accent: #a4133c;
 }
 
 @media (min-width: 1024px) {
@@ -124,6 +123,173 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-cue {
     animation: none;
+  }
+}
+
+/* ============================================================================
+   HOMEPAGE HERO — circuit board boot + cursor spotlight (HeroStage.tsx)
+   Every .hero-boot element runs a one-shot animation whose resting (no
+   animation) state is the finished hero, so skipping the boot is just
+   `animation: none`. Per-element delays are set inline by the components.
+   Only transform, opacity and stroke-dashoffset are animated.
+   ========================================================================== */
+.hero {
+  --hero-accent: var(--brand-accent);
+  /* Spotlight centre; overwritten every frame by HeroStage. The fallback sits
+     on the upper-left node cluster for the no-JS / pre-hydration frame. */
+  --mx: 23.6%;
+  --my: 37.8%;
+}
+
+/* The box each board half is fitted into: the hero minus breathing room top
+   and bottom. The bottom also clears the brand strip, which rides up over the
+   hero by --hero-overlap. */
+.hero-board {
+  top: 24px;
+  bottom: calc(var(--hero-overlap) + 24px);
+  width: 100%;
+  height: calc(100% - 48px - var(--hero-overlap));
+  /* The edge-cap nodes sit on the board's top/bottom edge. */
+  overflow: visible;
+}
+/* Below md the two fitted halves are each wider than half the screen and
+   cross behind the headline, so the board is left out on phones. */
+@media (max-width: 767px) {
+  .hero-board {
+    display: none;
+  }
+}
+
+/* Phase 1 — boot */
+.hero-trace {
+  stroke-dasharray: 100;
+  animation: hero-draw 1.1s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+.hero-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-pop 0.45s ease-out both;
+}
+.hero-scan {
+  opacity: 0;
+  animation: hero-scan 1.6s linear 0.2s both;
+}
+.hero-slide {
+  animation: hero-slide 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.hero-rise {
+  animation: hero-rise 0.6s ease-out both;
+}
+
+/* Phase 2 — idle: pulses and spotlight fade in once the board is up. */
+.hero-idle {
+  animation: hero-fade 0.8s ease 2.1s both;
+}
+.hero-pulse {
+  stroke-dasharray: 4 96;
+  animation: hero-pulse 5s linear infinite;
+}
+.hero-spot {
+  -webkit-mask-image: radial-gradient(circle 240px at var(--mx) var(--my), #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  mask-image: radial-gradient(circle 240px at var(--mx) var(--my), #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+}
+
+.hero-btn {
+  transition: transform 0.2s ease;
+}
+.hero-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Held on frame 0 while the PageLoader overlay is up (HeroStage). */
+.hero[data-boot-held] .hero-boot {
+  animation-play-state: paused;
+}
+
+/* Already booted this session: the root-layout script marks <html> on a
+   reload, HeroStage marks the section on a client-side return. */
+:root[data-hero-booted] .hero-boot,
+.hero[data-booted] .hero-boot {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .hero-boot {
+    animation: none;
+  }
+  .hero-pulses {
+    display: none;
+  }
+  .hero-btn {
+    transition: none;
+  }
+}
+
+@keyframes hero-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hero-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes hero-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  8%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+@keyframes hero-slide {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hero-pulse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
   }
 }
 
@@ -157,6 +323,15 @@
   *::-webkit-scrollbar-thumb:hover {
     background: #ababab;
     background-clip: padding-box;
+  }
+
+  /* No scrollbar on the page itself — it still scrolls by wheel, touch and
+     keyboard. Inner scroll areas (menus, dropdowns) keep the thin one above. */
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
   }
 
   button {
@@ -317,113 +492,6 @@
     border-color: var(--hairline-strong);
     box-shadow: var(--elev-3);
   }
-
-  /*
-   * The black hero stage, retreating upward as --p goes 0 -> 1.
-   *
-   * A wipe, not a cross-fade, and that is the whole point. Fading black to
-   * white passes through mid-grey, and *any* scheme for inverting text across
-   * that — blend modes or interpolated colour — hits a point where glyph and
-   * backdrop meet at the same grey and contrast collapses to 1:1. A hard edge
-   * means every pixel is only ever pure black or pure white, so the difference
-   * blend on the copy above always has full contrast to work with.
-   */
-  /*
-   * The hero stage. --p (0-1, from useScrollProgress) drives a uniform fade of
-   * the black fill; everything else here derives its colour from that.
-   */
-  .hero-stage {
-    /*
-     * A switch, not a ramp. Multiplying by 1000 collapses the transition to
-     * ~0.001 of progress — a couple of pixels of scroll — so it behaves as a
-     * step.
-     *
-     * This is the crux of a uniform fade. If the ink interpolated smoothly
-     * alongside the background, the two would cross at mid-grey and the text
-     * would be exactly as light as what's behind it: 1:1, invisible. Stepping
-     * it means the ink is only ever pure white or pure near-black, and the
-     * worst case is white on the mid-grey at the flip point — about 4.9:1.
-     *
-     * The step is then smoothed in *time* by the transition on .hero-swap, not
-     * in scroll, so a slow scroll can't park the text at an in-between grey.
-     */
-    --sw: clamp(0, (var(--p, 0) - 0.45) * 1000, 1);
-    --ink: color-mix(in srgb, #0f0f0f calc(var(--sw) * 100%), #ffffff);
-    --ink-inv: color-mix(in srgb, #ffffff calc(var(--sw) * 100%), #0f0f0f);
-    --ink-soft: color-mix(in srgb, var(--ink) 25%, transparent);
-  }
-
-  /*
-   * The stage fill: darkest at the top, lifting toward the bottom.
-   *
-   * The top stop is --chrome-dark, the same colour as the category bar directly
-   * above it, and it is held flat for the first 15% so the join is seamless
-   * rather than starting to lighten the instant it leaves the bar.
-   *
-   * Lifting toward the bottom also eases into the white section below, so the
-   * hero reads as one continuous surface top to bottom.
-   *
-   * The whole layer fades out uniformly, so the gradient flattens toward white
-   * as --p rises rather than needing its own transition. Every stop is fully
-   * opaque — any transparency here would let the white stage through early and
-   * break the fade.
-   */
-  .hero-fill {
-    background-image: linear-gradient(
-      180deg,
-      var(--hero-grad-from) 0%,
-      var(--hero-grad-from) 28%,
-      color-mix(in srgb, var(--hero-grad-from) 45%, var(--hero-grad-to)) 68%,
-      var(--hero-grad-to) 100%
-    );
-    opacity: calc(1 - var(--p, 0));
-  }
-
-  /* Anything whose colour flips with --sw. The duration is what turns the
-     scroll-step into something the eye reads as a transition. */
-  .hero-swap {
-    transition:
-      color 0.35s ease,
-      background-color 0.35s ease,
-      border-color 0.35s ease;
-  }
-
-  /*
-   * The one disc watermark for the whole site. Fixed and viewport-centred, so
-   * it starts behind the hero and then travels down the page as you scroll —
-   * a single element rather than a hero copy handing over to a page copy.
-   *
-   * It lives inside .hero-stage at -z-10, which puts it above the stage
-   * background but under every piece of content. Sections further down with
-   * their own opaque background (the footer) cover it; transparent ones let it
-   * through.
-   */
-  .site-mark {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: min(46vw, 480px);
-    aspect-ratio: 1;
-    translate: -50% -50%;
-  }
-
-  /*
-   * The hero disc mark, in two tones cross-faded by --sw. Both images sit in
-   * the same box; only their opacity differs, so there is no layout shift and
-   * the swap happens in time (the transition) rather than in scroll — the same
-   * reason the ink steps instead of interpolating.
-   */
-  .hero-mark-dark,
-  .hero-mark-light {
-    transition: opacity 0.35s ease;
-  }
-  .hero-mark-dark {
-    opacity: calc((1 - var(--sw, 0)) * var(--mark-alpha));
-  }
-  .hero-mark-light {
-    opacity: calc(var(--sw, 0) * var(--mark-alpha));
-  }
-
 
 
   /* ---- Controls ----------------------------------------------------------- */

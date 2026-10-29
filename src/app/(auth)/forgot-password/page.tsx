@@ -85,6 +85,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
+              data-cursor-disabled="Sending…"
               className="mt-6.25 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isLoading ? (

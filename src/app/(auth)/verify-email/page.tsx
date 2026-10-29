@@ -128,6 +128,7 @@ function VerifyEmailContent() {
             type="button"
             onClick={() => handleVerify()}
             disabled={isVerifying || !token}
+            data-cursor-disabled={token ? "Verifying…" : "Verification link is missing"}
             className="mt-6.25 w-full h-11 bg-primary text-primary-foreground font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isVerifying ? (
@@ -142,6 +143,7 @@ function VerifyEmailContent() {
             type="button"
             onClick={handleResend}
             disabled={isResending}
+            data-cursor-disabled="Sending…"
             className="mt-3.75 w-full h-11 border border-primary text-primary font-montserrat font-semibold text-[16px] rounded-[5px] flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isResending ? (

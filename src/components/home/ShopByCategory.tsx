@@ -23,15 +23,15 @@ function CategoryCard({ category }: { category: Category }) {
     product?.images?.[0]?.imageUrl;
 
   return (
-    <Link href={`${ROUTES.PRODUCTS}?category=${category.slug}`} className="block w-full">
+    <Link href={`${ROUTES.PRODUCTS}?category=${category.slug}`} data-cursor="Explore" className="block w-full">
       <div className="surface-card hover-lift group relative w-full aspect-317/359 rounded-2xl overflow-hidden">
         {primaryImg ? (
           <Image
             src={primaryImg}
             alt={category.name}
             fill
+            sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, 50vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            unoptimized
           />
         ) : (
           <div className="absolute inset-0 bg-gray-100" />

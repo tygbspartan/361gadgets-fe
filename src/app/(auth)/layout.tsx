@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import { FlyProvider } from "@/components/providers/FlyProvider";
 import LoadingProvider from "@/components/providers/LoadingProvider";
 import { ToastProvider } from "@/components/ui/ToastStack";
+import CursorFollower from "@/components/ui/CursorFollower";
 
 export default function AuthLayout({
   children,
@@ -20,6 +21,7 @@ export default function AuthLayout({
             </main>
             <Footer />
           </div>
+          <CursorFollower />
         </LoadingProvider>
       </FlyProvider>
     </ToastProvider>

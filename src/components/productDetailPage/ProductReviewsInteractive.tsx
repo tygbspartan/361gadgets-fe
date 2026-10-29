@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { setActiveCategorySlug } from "@/lib/redux/features/ui/uiSlice";
-import { useGetUserOrdersQuery } from "@/lib/redux/features/orders/ordersApi";
+import { useGetReviewEligibilityQuery } from "@/lib/redux/features/reviews/reviewsApi";
 import WriteReview from "./WriteReview";
 
 /**
  * Client island for the product page's interactive, auth-dependent bits:
  *  - keeps the navbar's active-category highlight in sync
- *  - shows the "write a review" form only to customers who purchased the item
+ *  - shows the "write a review" form only to customers who received the item
  * The reviews themselves are server-rendered by the page (crawlable); this
  * component adds nothing to the initial HTML unless the viewer can write one.
  */
@@ -35,21 +35,19 @@ export default function ProductReviewsInteractive({
     };
   }, [categorySlug, dispatch]);
 
-  const { data: ordersData } = useGetUserOrdersQuery(
-    { page: 1, limit: 200 },
-    { skip: !isAuthenticated }
+  // The server checks for a delivered order containing this product — the same
+  // rule it applies when the review is submitted.
+  const { data: eligibility } = useGetReviewEligibilityQuery(
+    { productId, userId: user?.id ?? 0 },
+    { skip: !isAuthenticated || !user }
   );
 
-  const hasPurchased =
-    ordersData?.orders.some(
-      (order) =>
-        order.status !== "cancelled" &&
-        order.items.some((item) => item.productId === productId)
-    ) ?? false;
+  // reviewerIds comes from the server-rendered (cached) review list, so the
+  // live answer is checked too.
+  const hasReviewed =
+    (eligibility?.hasReviewed ?? false) || (user ? reviewerIds.includes(user.id) : false);
 
-  const hasReviewed = user ? reviewerIds.includes(user.id) : false;
-
-  if (!hasPurchased) return null;
+  if (!eligibility?.canReview) return null;
 
   return (
     <div id="write-review">

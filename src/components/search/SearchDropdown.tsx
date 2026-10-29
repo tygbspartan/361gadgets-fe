@@ -196,6 +196,7 @@ export default function SearchDropdown({
                           key={product.id}
                           href={`${ROUTES.PRODUCT}/${product.slug}`}
                           onClick={handleProductClick}
+                          data-cursor="View"
                           className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
                         >
                           {/* Product Image */}

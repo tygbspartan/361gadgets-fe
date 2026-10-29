@@ -239,6 +239,7 @@ export default function ProfileReviewsPage() {
                     <button
                       onClick={() => setDeleteConfirm({ id: review.id, productId: review.productId })}
                       disabled={isDeleting}
+                      data-cursor-disabled="Deleting…"
                       className="flex items-center justify-center border border-black bg-white text-black font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-3.25 lg:px-3.75 py-0 lg:py-1.5 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {isDeleting ? "Deleting…" : "Delete Review"}
@@ -311,6 +312,7 @@ export default function ProfileReviewsPage() {
               <button
                 onClick={handleFollowupSubmit}
                 disabled={isSubmittingFollowup}
+                data-cursor-disabled="Posting…"
                 className="bg-primary text-primary-foreground font-inter font-semibold text-base leading-none uppercase rounded-[3px] px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
               >
                 {isSubmittingFollowup ? "Posting…" : "POST"}

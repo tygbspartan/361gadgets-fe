@@ -74,6 +74,7 @@ export default function ProductGridCard({ product }: Props) {
     <div className="surface-card hover-lift rounded-2xl p-3 lg:p-5 flex flex-col group">
       <Link
         href={`${ROUTES.PRODUCT}/${product.slug}`}
+        data-cursor="View"
         className="block relative"
       >
         <div
@@ -105,6 +106,7 @@ export default function ProductGridCard({ product }: Props) {
             onClick={handleWishlist}
             className="group/heart absolute top-2 right-2 w-5.5 h-5.5 lg:w-8.5 lg:h-8.5 rounded-full bg-white/85 backdrop-blur border border-black/10 shadow-(--elev-1) flex items-center justify-center p-1 lg:p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white"
             aria-label="Add to wishlist"
+            data-cursor={inWishlist ? "In wishlist" : "Add to wishlist"}
           >
             <span className="relative inline-block w-3.25 h-3.25 lg:w-4.5 lg:h-4.5">
               <Icon
@@ -162,6 +164,7 @@ export default function ProductGridCard({ product }: Props) {
         <button
           onClick={handleAddToCart}
           disabled={isOOS}
+          data-cursor-disabled="Out of stock"
           className="btn-accent mt-2.25 w-full font-inter font-semibold text-[10px] lg:text-base leading-none lg:leading-6 uppercase tracking-wide rounded-[8px] h-7 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-2 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
         >
           {isOOS ? "OUT OF STOCK" : "ADD TO CART"}

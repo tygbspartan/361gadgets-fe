@@ -216,6 +216,7 @@ export default function ProfileOrdersPage() {
                     <button
                       onClick={() => handleReorder(order)}
                       disabled={isReordering}
+                      data-cursor-disabled="Adding to cart…"
                       className="flex items-center justify-center border border-black bg-white text-black font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-3.25 lg:px-3.75 py-0 lg:py-1.5 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {isReordering ? "Adding…" : "Reorder"}
@@ -240,6 +241,7 @@ export default function ProfileOrdersPage() {
               <button
                 onClick={() => setPage((p) => p - 1)}
                 disabled={page === 1}
+                data-cursor-disabled="Already on the first page"
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed font-inter text-sm"
               >
                 Previous
@@ -267,6 +269,7 @@ export default function ProfileOrdersPage() {
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page === pagination.totalPages}
+                data-cursor-disabled="Already on the last page"
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed font-inter text-sm"
               >
                 Next

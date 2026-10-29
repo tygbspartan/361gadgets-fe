@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import LoadingProvider from "@/components/providers/LoadingProvider";
 import { FlyProvider } from "@/components/providers/FlyProvider";
 import { ToastProvider } from "@/components/ui/ToastStack";
+import CursorFollower from "@/components/ui/CursorFollower";
 
 export default function CustomerLayout({
   children,
@@ -18,6 +19,7 @@ export default function CustomerLayout({
             <main className="flex-1 pb-12.5">{children}</main>
             <Footer />
           </div>
+          <CursorFollower />
         </LoadingProvider>
       </FlyProvider>
     </ToastProvider>

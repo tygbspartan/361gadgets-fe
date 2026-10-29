@@ -241,6 +241,7 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
           <button
             type="submit"
             disabled={isLoggingIn}
+            data-cursor-disabled="Signing in…"
             className="btn-accent mt-6.25 w-full h-11 font-montserrat font-semibold text-[16px] rounded-[8px] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
           >
             {isLoggingIn ? <><Loader2 className="w-4 h-4 animate-spin" />Signing in…</> : "Sign in"}
@@ -304,6 +305,7 @@ export default function AuthModal({ defaultTab = "signin" }: { defaultTab?: Tab 
             <button
               type="submit"
               disabled={isRegistering}
+              data-cursor-disabled="Creating account…"
               className="btn-accent mt-6.25 w-full h-11 font-montserrat font-semibold text-[16px] rounded-[8px] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
             >
               {isRegistering ? <><Loader2 className="w-4 h-4 animate-spin" />Creating account…</> : "Create Account"}

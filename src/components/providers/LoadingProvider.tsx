@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { createContext, useState, useEffect } from "react";
 import PageLoader from "@/components/ui/PageLoader";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
 import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
@@ -18,6 +18,11 @@ const LEAD = 0.1;
 const CEILING = 0.9;
 /** Beat at 100% so the completed bar is legible before the hand-off. */
 const HOLD_MS = 260;
+
+/** False while the PageLoader overlay is covering the page, so entrance
+ *  animations (the homepage hero's boot) can wait until they'd be seen.
+ *  Defaults to true for anything rendered outside a LoadingProvider. */
+export const PageReadyContext = createContext(true);
 
 export default function LoadingProvider({
   children,
@@ -66,7 +71,7 @@ export default function LoadingProvider({
   // overlay shown on top until the preload queries resolve.
   return (
     <>
-      {children}
+      <PageReadyContext.Provider value={isReady}>{children}</PageReadyContext.Provider>
       {!isReady && <PageLoader progress={shown} />}
     </>
   );

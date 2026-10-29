@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { Icon } from "@iconify/react";
@@ -44,6 +44,34 @@ function isCategoryActive(cat: Category, targetSlug: string | null): boolean {
     (c) => c.slug === targetSlug || (c.children ?? []).some((gc) => gc.slug === targetSlug)
   );
 }
+
+/*
+ * Whether the footer has scrolled up to the navbar. The footer is a full
+ * screen tall, so once it reaches the bar the navbar steps aside rather than
+ * sitting on top of it; scrolling back up brings it straight back.
+ */
+const subscribeToScroll = (onChange: () => void) => {
+  window.addEventListener("scroll", onChange, { passive: true });
+  window.addEventListener("resize", onChange);
+  return () => {
+    window.removeEventListener("scroll", onChange);
+    window.removeEventListener("resize", onChange);
+  };
+};
+/* Once the footer has reached the top of the window it is all that's behind
+   the bar. Not earlier: the bar goes see-through with a white logo, and with
+   the white page still behind it the logo would vanish. */
+let footerUnder = false;
+const isFooterUnderNavbar = () => {
+  const footer = document.getElementById("site-footer");
+  if (!footer) return (footerUnder = false);
+  // A little hysteresis: step aside at the very bottom, but only come back
+  // once the page has scrolled up past 16px, so a trackpad's bounce at the
+  // end of the page can't flicker the bar back and forth.
+  const top = footer.getBoundingClientRect().top;
+  footerUnder = footerUnder ? top <= 16 : top <= 1;
+  return footerUnder;
+};
 
 export default function Navbar() {
   const router = useRouter();
@@ -97,6 +125,33 @@ export default function Navbar() {
     (categories.find((c) => c.id === openCat)?.children?.length ?? 0) > 0;
 
   const catBarRef = useRef<HTMLDivElement>(null);
+  const topBarRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Publish the real height of both bars (top bar + category strip) as
+   * --nav-h, so the hero ends exactly at the fold. The values in globals.css
+   * are only the pre-hydration fallback: the rendered height drifts from them
+   * with fonts, zoom and logo size. Only the two bars are measured — the
+   * mobile menu opens in-flow inside <nav> and must not resize the hero.
+   */
+  useEffect(() => {
+    const top = topBarRef.current;
+    if (!top) return;
+    const cat = catBarRef.current;
+    const root = document.documentElement;
+    const update = () => {
+      const h = top.getBoundingClientRect().height + (cat?.getBoundingClientRect().height ?? 0);
+      root.style.setProperty("--nav-h", `${h}px`);
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(top);
+    if (cat) ro.observe(cat); /* display:none below lg, so it measures 0 there */
+    update();
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--nav-h");
+    };
+  }, []);
 
   useEffect(() => {
     if (categoriesData?.data) {
@@ -175,19 +230,43 @@ export default function Navbar() {
     return user.email.split("@")[0];
   };
 
+  /*
+   * Over the footer the bar steps back: its background, the category strip
+   * and every control fade away, leaving just the logo — in white, on the
+   * dark footer. Not while the user is in the middle of something in the bar.
+   */
+  const inFooter = useSyncExternalStore(subscribeToScroll, isFooterUnderNavbar, () => false);
+  const stepAside = inFooter && !mobileMenuOpen && !searchOpen && openCat === null;
+  /*
+   * The hand-off is staggered so it reads as one gentle motion rather than a
+   * switch: controls and the category strip go first, then the bar's
+   * background, then the logo turns white. A long ease-out (fast start, slow
+   * settle) on everything. Coming back, there's no stagger — the bar returns
+   * at once when you scroll up.
+   */
+  const STEP_EASE = "ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+  const stepBack = `transition-[opacity,translate] duration-500 ${STEP_EASE} ${
+    stepAside ? "pointer-events-none opacity-0" : "opacity-100"
+  }`;
+  const stepDelay = (ms: "delay-150" | "delay-250") => (stepAside ? ms : "delay-0");
+
   return (
     <>
       {/* No bottom border: it rendered as a 1px #e7e7e7 line between the black
           category bar and the black hero. The category strip is its own edge. */}
-      <nav className="glass sticky top-0 z-50 mb-12.5">
+      <nav
+        className={`sticky top-0 z-50 mb-12.5 transition-[background-color,backdrop-filter] duration-700 ${STEP_EASE} ${stepDelay(
+          "delay-150",
+        )} ${stepAside ? "bg-transparent" : "glass"}`}
+      >
 
         {/* ── Top Bar ── 91px via .nav-top-bar */}
-        <div className="nav-top-bar">
+        <div ref={topBarRef} className="nav-top-bar">
           <div className="page-wrapper h-full">
             <div className="grid grid-cols-3 items-center h-full">
 
               {/* Left: burger (mobile) + search */}
-              <div className="flex items-center gap-3">
+              <div inert={stepAside} className={`flex items-center gap-3 ${stepBack}`}>
                 <button
                   className="lg:hidden shrink-0"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -295,25 +374,40 @@ export default function Navbar() {
 
               {/* Center: Logo */}
               <div className="flex justify-center items-center">
-                <Link href={ROUTES.HOME}>
+                {/* Black logo, with the white one stacked on top that fades in
+                    over the footer. */}
+                <Link href={ROUTES.HOME} className="relative block">
                   <Image
                     src={BRAND.logo.primary}
                     alt={BRAND.name}
                     height={55}
                     width={200}
-                    className="w-20 h-auto lg:w-auto lg:h-11.5"
+                    className={`w-20 h-auto lg:w-auto lg:h-11.5 transition-opacity duration-700 ${STEP_EASE} ${stepDelay(
+                      "delay-250",
+                    )} ${stepAside ? "opacity-0" : "opacity-100"}`}
                     priority
+                  />
+                  <Image
+                    src={BRAND.logo.secondary}
+                    alt=""
+                    aria-hidden
+                    height={55}
+                    width={200}
+                    className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-700 ${STEP_EASE} ${stepDelay(
+                      "delay-250",
+                    )} ${stepAside ? "opacity-100" : "opacity-0"}`}
                   />
                 </Link>
               </div>
 
               {/* Right: Wishlist · Cart · User · Mobile toggle */}
-              <div className="flex items-center justify-end gap-2.5 lg:gap-5">
+              <div inert={stepAside} className={`flex items-center justify-end gap-2.5 lg:gap-5 ${stepBack}`}>
 
                 {/* Wishlist — opens flyout */}
                 <button
                   onClick={() => setWishlistOpen(true)}
                   aria-label="Wishlist"
+                  data-cursor="Wishlist"
                   data-fly-target="wishlist"
                   className="flex items-center text-primary relative"
                 >
@@ -329,6 +423,7 @@ export default function Navbar() {
                 <button
                   onClick={() => setCartOpen(true)}
                   aria-label="Cart"
+                  data-cursor="Cart"
                   data-fly-target="cart"
                   className="relative flex items-center"
                 >
@@ -394,7 +489,10 @@ export default function Navbar() {
         <div
           ref={catBarRef}
           onMouseLeave={() => setOpenCat(null)}
-          className="relative hidden lg:block bg-(--chrome-dark) navbar-shadow"
+          inert={stepAside}
+          className={`relative hidden lg:block bg-(--chrome-dark) navbar-shadow ${stepBack} ${
+            stepAside ? "-translate-y-2" : "translate-y-0"
+          }`}
         >
           <div className="page-wrapper">
             <div className="flex justify-center h-15.5 gap-5">
@@ -414,6 +512,7 @@ export default function Navbar() {
                     onClick={() =>
                       isOpen ? setOpenCat(null) : openMenu(level1)
                     }
+                    data-cursor="Browse"
                     className="relative cursor-pointer"
                   >
                     {/* All labels are white; the underline alone carries

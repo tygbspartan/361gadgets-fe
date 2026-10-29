@@ -88,6 +88,7 @@ export default function WriteReview({ productId, isAuthenticated, onReviewSubmit
             type={isAuthenticated ? "submit" : "button"}
             onClick={!isAuthenticated ? () => router.push(ROUTES.LOGIN) : undefined}
             disabled={isLoading}
+            data-cursor-disabled="Posting…"
             className="w-fit bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none uppercase rounded-[3px] p-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
           >
             {isLoading ? "Posting…" : "POST"}

@@ -136,6 +136,8 @@ export default function ProductDetails({
               <button
                 key={img.id}
                 onClick={() => setSelectedImageIndex(idx)}
+                aria-label={`Show image ${idx + 1}`}
+                data-cursor={selectedImageIndex === idx ? "Showing" : "Show"}
                 className={`relative thumb-strip-item aspect-square overflow-hidden bg-[#F8F8F8] border-[0.5px] border-[#C9C9C9] transition-all ${
                   selectedImageIndex === idx
                     ? "shadow-[0px_2px_4px_0px_#00000026]"
@@ -191,11 +193,23 @@ export default function ProductDetails({
             ({summary?.totalReviews ?? 0})
           </span>
           <div className="ml-auto flex items-center gap-4">
-            <button onClick={handleShare} className="hover:opacity-60 transition-opacity" aria-label="Share">
+            {/* Both icon buttons are the same 24px flex box: as inline content
+                the heart picked up line-height below it and sat 3–4px higher
+                than the share icon. */}
+            <button
+              onClick={handleShare}
+              className="flex h-6 w-6 items-center justify-center hover:opacity-60 transition-opacity"
+              aria-label="Share"
+            >
               <Icon icon="tdesign:share-filled" width={24} height={24} />
             </button>
-            <button onClick={handleWishlist} className="group" aria-label="Wishlist">
-              <span className="relative inline-block w-6 h-6">
+            <button
+              onClick={handleWishlist}
+              className="group flex h-6 w-6 items-center justify-center"
+              aria-label="Wishlist"
+              data-cursor={isInWishlist ? "In wishlist" : "Add to wishlist"}
+            >
+              <span className="relative block w-6 h-6">
                 <Icon
                   icon="fa:heart-o"
                   width={24}
@@ -231,6 +245,7 @@ export default function ProductDetails({
                     key={color.id}
                     type="button"
                     title={oos ? `${color.name} — out of stock` : color.name}
+                    data-cursor={oos ? `${color.name} · sold out` : color.name}
                     onClick={() => {
                       setSelectedColorId(color.id);
                       setQuantity(1);
@@ -263,6 +278,7 @@ export default function ProductDetails({
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 disabled={isOOS || quantity <= 1}
+                data-cursor-disabled={isOOS ? "Out of stock" : "Minimum is 1"}
                 className="w-10 h-10 border border-[#D4D4D4] rounded-[3px] flex items-center justify-center font-inter font-normal text-base uppercase disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 −
@@ -273,6 +289,7 @@ export default function ProductDetails({
               <button
                 onClick={() => setQuantity((q) => Math.min(effectiveStock, q + 1))}
                 disabled={isOOS || quantity >= effectiveStock}
+                data-cursor-disabled={isOOS ? "Out of stock" : `Only ${effectiveStock} in stock`}
                 className="w-10 h-10 border border-[#D4D4D4] rounded-[3px] flex items-center justify-center font-inter font-normal text-base uppercase disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 +
@@ -281,7 +298,8 @@ export default function ProductDetails({
             <button
               onClick={handleAddToCart}
               disabled={isOOS}
-              className="btn-accent w-32.25 h-10 font-inter font-semibold text-[14px] lg:text-base leading-none uppercase tracking-wide rounded-[8px] px-2.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
+              data-cursor-disabled="Out of stock"
+              className="btn-accent shrink-0 whitespace-nowrap h-10 min-w-40 font-inter font-semibold text-[14px] lg:text-base leading-none uppercase tracking-wide rounded-[8px] px-6 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
             >
               {isOOS ? "OUT OF STOCK" : "ADD TO CART"}
             </button>

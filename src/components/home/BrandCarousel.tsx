@@ -18,8 +18,8 @@ import { ROUTES } from "@/constants/routes";
  * 60fps a state update per frame would re-render the whole list.
  */
 
-/** Baseline drift in px/ms (negative = leftward). ~50px/s, matching the old 25s marquee. */
-const DRIFT = -0.05;
+/** Baseline drift in px/ms (negative = leftward). ~80px/s. */
+const DRIFT = -0.08;
 /** Per-ms exponential pull of the current velocity back toward DRIFT after a fling. */
 const DECAY = 0.994;
 /** Pointer travel in px past which the gesture counts as a drag, not a click. */
@@ -125,7 +125,7 @@ export default function BrandsCarousel() {
     velocity.current = 0;
     lastX.current = e.clientX;
     lastT.current = performance.now();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    // No pointer capture yet — see onPointerMove.
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -136,6 +136,16 @@ export default function BrandsCarousel() {
 
     offset.current += dx;
     travelled.current += Math.abs(dx);
+    /*
+     * Capture only once this is clearly a drag. Capturing on pointerdown
+     * retargets the pointerup to the strip itself, so the click lands on the
+     * strip rather than the logo and a plain click on a brand never navigates.
+     * Past the slop, capture keeps the drag alive if the pointer leaves the
+     * strip, and the click is swallowed in onClickCapture anyway.
+     */
+    if (travelled.current > DRAG_SLOP && !e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     velocity.current = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, dx / dt));
 
     lastX.current = e.clientX;
@@ -172,6 +182,7 @@ export default function BrandsCarousel() {
        * two exactly one screen between them.
        */
       className="relative z-10 -mt-(--hero-overlap) w-full overflow-hidden rounded-t-[28px] border-t border-(--hairline) bg-background pt-9 pb-5 lg:pt-11 lg:pb-7 shadow-[0_-10px_30px_-14px_rgb(0_0_0/0.18)] select-none touch-pan-y cursor-grab active:cursor-grabbing"
+      data-cursor="Drag"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -197,6 +208,7 @@ export default function BrandsCarousel() {
               <Link
                 key={`${copy}-${brand.id}`}
                 href={`${ROUTES.PRODUCTS}?brand=${brand.slug}`}
+                data-cursor={`Shop ${brand.name}`}
                 /* Only the first set is reachable by keyboard; the rest are
                    duplicates that would otherwise triple the tab stops. */
                 tabIndex={copy > 0 ? -1 : undefined}
@@ -217,7 +229,6 @@ export default function BrandsCarousel() {
                   draggable={false}
                   onLoad={measure}
                   className="object-contain w-21.75 h-12.5 md:w-27.5 md:h-17.5 lg:w-38.75 lg:h-22.5 pointer-events-none"
-                  unoptimized
                 />
               </Link>
             ))}

@@ -93,6 +93,7 @@ function ToastCard({ toast, onClose }: { toast: ToastItem; onClose: () => void }
       </div>
       <button
         onClick={onClose}
+        aria-label="Dismiss"
         className="shrink-0 text-gray-400 hover:text-foreground transition-colors mt-0.5"
       >
         <Icon icon="material-symbols:close" width={14} height={14} />

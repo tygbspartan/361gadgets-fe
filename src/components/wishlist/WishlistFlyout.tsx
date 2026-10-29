@@ -156,6 +156,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                     type="checkbox"
                     checked={isSelected}
                     disabled={isOOS}
+                    data-cursor-disabled="Out of stock"
                     onChange={() => !isOOS && toggleSelect(item.id)}
                     className={`w-4 h-4 self-center shrink-0 accent-primary ${
                       isOOS ? "cursor-not-allowed" : "cursor-pointer"
@@ -163,7 +164,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                   />
 
                   {/* Image */}
-                  <Link href={`${ROUTES.PRODUCT}/${product?.slug}`} onClick={onClose} className="relative shrink-0 w-19 h-19 lg:w-30 lg:h-30 border-[0.5px] border-[#C9C9C9] overflow-hidden block">
+                  <Link href={`${ROUTES.PRODUCT}/${product?.slug}`} onClick={onClose} data-cursor="View" className="relative shrink-0 w-19 h-19 lg:w-30 lg:h-30 border-[0.5px] border-[#C9C9C9] overflow-hidden block">
                     {primaryImage ? (
                       <Image
                         src={primaryImage}
@@ -200,6 +201,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                       <button
                         onClick={() => changeQty(item.id, -1, stock)}
                         disabled={isOOS || qty <= 1}
+                        data-cursor-disabled={isOOS ? "Out of stock" : "Minimum is 1"}
                         className={`px-[9.5px] py-1.5 lg:p-0 lg:w-8.75 lg:h-8.75 border border-[#C9C9C9] flex items-center justify-center font-inter text-[9.6px] lg:text-sm font-normal leading-none uppercase lg:normal-case ${
                           isOOS ? "text-[#747373]" : ""
                         } disabled:cursor-not-allowed disabled:opacity-40`}
@@ -216,6 +218,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                       <button
                         onClick={() => changeQty(item.id, 1, stock)}
                         disabled={isOOS || qty >= stock}
+                        data-cursor-disabled={isOOS ? "Out of stock" : `Only ${stock} in stock`}
                         className={`px-[9.5px] py-1.5 lg:p-0 lg:w-8.75 lg:h-8.75 border border-[#C9C9C9] flex items-center justify-center font-inter text-[9.6px] lg:text-sm font-normal leading-none uppercase lg:normal-case ${
                           isOOS ? "text-[#747373]" : ""
                         } disabled:cursor-not-allowed disabled:opacity-40`}
@@ -234,6 +237,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
                           showToast({ icon: "hugeicons:heart-remove", title: "Removed from Wishlist!", variant: "negative" });
                         } catch {}
                       }}
+                      aria-label="Remove from wishlist"
                       className="text-gray-400 hover:text-primary transition-colors"
                     >
                       <Icon icon="proicons:delete" className="w-3.5 h-3.5 lg:w-6 lg:h-6" />
@@ -266,6 +270,7 @@ export default function WishlistFlyout({ open, onClose }: Props) {
           <button
             onClick={handleMoveToCart}
             disabled={selectedIds.size === 0 || isMoving || isMovingGuest}
+            data-cursor-disabled={selectedIds.size === 0 ? "Select items first" : "Adding…"}
             className="w-full bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isMoving || isMovingGuest ? "ADDING…" : "ADD TO CART"}

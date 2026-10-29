@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setActiveCategorySlug } from "@/lib/redux/features/ui/uiSlice";
@@ -8,6 +8,7 @@ import { useGetProductsQuery } from "@/lib/redux/features/products/productsApi";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
 import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
 import ProductGridCard from "@/components/products/ProductGridCard";
+import ProductCardSkeleton from "@/components/products/ProductCardSkeleton";
 import Spinner from "@/components/ui/Spinner";
 import ProductFilters from "@/components/products/ProductFilters";
 import ProductSort from "@/components/products/ProductSort";
@@ -15,6 +16,10 @@ import MobileFilterSheet from "@/components/products/MobileFilterSheet";
 import SectionTitle from "@/components/home/SectionTitle";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Icon } from "@iconify/react";
+
+const PAGE_SIZE = 5;
+/** Longest the new batch waits on its images before showing regardless. */
+const REVEAL_CAP_MS = 2500;
 
 function ProductListingContent() {
   const searchParams = useSearchParams();
@@ -31,9 +36,20 @@ function ProductListingContent() {
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const { data: productsData, isLoading, error } = useGetProductsQuery({
+  /*
+   * `currentData`, not `data`: on a page/filter change RTK Query keeps handing
+   * back the previous result in `data` until the new one lands, which left the
+   * old batch on screen. `currentData` is undefined until the response for
+   * *these* args arrives, so the grid can show placeholders instead.
+   */
+  const {
+    data: lastData,
+    currentData: productsData,
+    isFetching,
+    error,
+  } = useGetProductsQuery({
     page: currentPage,
-    limit: 5,
+    limit: PAGE_SIZE,
     categorySlug: categorySlug || undefined,
     brandSlug: brandSlug || undefined,
     search: searchQuery || undefined,
@@ -57,7 +73,59 @@ function ProductListingContent() {
   }, [categorySlug, dispatch]);
 
   const products = productsData?.data?.data || [];
-  const pagination = productsData?.data?.pagination;
+  // The last known page count keeps the pagination bar in place while the
+  // next page loads, rather than vanishing and reappearing.
+  const pagination = (productsData ?? lastData)?.data?.pagination;
+
+  /*
+   * Hold the new batch back until its images are in, so it appears in one go
+   * instead of as empty cards filling in. The grid renders invisibly behind
+   * the placeholders; once every image in or near the viewport has loaded (or
+   * failed), it's revealed. Capped so one slow image can't stall the page.
+   */
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [readyFor, setReadyFor] = useState<typeof productsData>(undefined);
+  const revealed = productsData !== undefined && readyFor === productsData;
+
+  useLayoutEffect(() => {
+    if (!productsData) return;
+    const grid = gridRef.current;
+    const pending = grid
+      ? [...grid.querySelectorAll("img")].filter(
+          (img) => !img.complete && img.getBoundingClientRect().top < window.innerHeight * 1.5,
+        )
+      : [];
+
+    let cancelled = false;
+    const reveal = () => {
+      if (!cancelled) setReadyFor(productsData);
+    };
+    // Everything already cached (e.g. going back to a page seen before):
+    // reveal before paint, so there's no one-frame flash of placeholders.
+    if (pending.length === 0) {
+      reveal();
+      return;
+    }
+
+    let left = pending.length;
+    const onSettled = () => {
+      left -= 1;
+      if (left === 0) reveal();
+    };
+    pending.forEach((img) => {
+      img.addEventListener("load", onSettled, { once: true });
+      img.addEventListener("error", onSettled, { once: true });
+    });
+    const cap = window.setTimeout(reveal, REVEAL_CAP_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(cap);
+      pending.forEach((img) => {
+        img.removeEventListener("load", onSettled);
+        img.removeEventListener("error", onSettled);
+      });
+    };
+  }, [productsData]);
 
   const getCategoryName = () => {
     if (!categorySlug || !categoriesData?.data) return null;
@@ -127,9 +195,7 @@ function ProductListingContent() {
           </div>
 
           {/* Content */}
-          {isLoading ? (
-            <Spinner />
-          ) : error ? (
+          {error && !isFetching ? (
             <div className="text-center py-12">
               <p className="text-red-600 mb-4">Failed to load products</p>
               <button
@@ -139,7 +205,7 @@ function ProductListingContent() {
                 Retry
               </button>
             </div>
-          ) : products.length === 0 ? (
+          ) : productsData && products.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 text-lg mb-4">No products found</p>
               <p className="text-gray-500 text-sm">
@@ -148,10 +214,31 @@ function ProductListingContent() {
             </div>
           ) : (
             <>
-              <div className="products-grid">
-                {products.map((product) => (
-                  <ProductGridCard key={product.id} product={product} />
-                ))}
+              <div className="relative" aria-busy={!revealed}>
+                {!revealed && (
+                  <>
+                    <span className="sr-only" role="status">Loading products</span>
+                    <div className="products-grid">
+                      {Array.from({ length: PAGE_SIZE }, (_, i) => (
+                        <ProductCardSkeleton key={i} />
+                      ))}
+                    </div>
+                  </>
+                )}
+                {/* Laid out (so its images load) but invisible until ready;
+                    sits over the placeholders until then. */}
+                {productsData && (
+                  <div
+                    ref={gridRef}
+                    className={`products-grid transition-opacity duration-300 ${
+                      revealed ? "opacity-100" : "pointer-events-none absolute inset-x-0 top-0 opacity-0"
+                    }`}
+                  >
+                    {products.map((product) => (
+                      <ProductGridCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                )}
               </div>
 
               {pagination && pagination.totalPages > 1 && (() => {
@@ -179,6 +266,7 @@ function ProductListingContent() {
                       <button
                         onClick={() => handlePageChange(cur - 1)}
                         disabled={cur === 1}
+                        data-cursor-disabled="Already on the first page"
                         className={navClass}
                       >
                         <ChevronLeft className="w-4 h-4" />
@@ -211,6 +299,7 @@ function ProductListingContent() {
                       <button
                         onClick={() => handlePageChange(cur + 1)}
                         disabled={cur === total}
+                        data-cursor-disabled="Already on the last page"
                         className={navClass}
                       >
                         Next

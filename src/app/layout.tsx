@@ -4,6 +4,7 @@ import "./globals.css";
 import { ReduxProvider } from "@/lib/redux/provider";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { BRAND } from "@/config/brand";
+import { HERO_BOOT_SCRIPT, SCROLL_TOP_ON_RELOAD_SCRIPT } from "@/components/home/heroCircuit";
 
 const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
@@ -66,7 +67,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ "--color-primary": BRAND.primaryColor, "--color-ring": BRAND.primaryColor } as React.CSSProperties}>
+    /* suppressHydrationWarning: HERO_BOOT_SCRIPT may add data-hero-booted to
+       <html> before React hydrates. Applies to this element's attributes only. */
+    <html lang="en" suppressHydrationWarning style={{ "--color-primary": BRAND.primaryColor, "--color-ring": BRAND.primaryColor } as React.CSSProperties}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCROLL_TOP_ON_RELOAD_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: HERO_BOOT_SCRIPT }} />
+      </head>
       <body className={`${poppins.className} ${inter.variable} ${montserrat.variable}`}>
         <script
           type="application/ld+json"

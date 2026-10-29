@@ -169,6 +169,7 @@ export default function OrderSummary({
             <button
               onClick={onApplyDiscount}
               disabled={isValidatingDiscount || !discountCode.trim()}
+              data-cursor-disabled={isValidatingDiscount ? "Checking code…" : "Enter a code first"}
               className="shrink-0 bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
             >
               {isValidatingDiscount ? (
@@ -243,6 +244,7 @@ export default function OrderSummary({
       <button
         onClick={onCheckout}
         disabled={isCheckingOut}
+        data-cursor-disabled="Placing order…"
         className="-mt-2.5 w-full bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
       >
         {isCheckingOut ? (
