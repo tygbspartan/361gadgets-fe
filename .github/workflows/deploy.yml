@@ -1,0 +1,74 @@
+name: Deploy frontend
+
+# Deploys main to the VPS over SSH on port 443 (sslh). The deploy key can only
+# run deploy/frontend.sh on the server (forced command in authorized_keys).
+#
+# Push to main deploys automatically only once the repository variable
+# AUTO_DEPLOY_FRONTEND is set to "true". Until then, run it by hand from the
+# Actions tab: "check" verifies the server without changing anything.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "check = verify only, changes nothing; deploy = build and release"
+        type: choice
+        options: [check, deploy]
+        default: check
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  deploy:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY_FRONTEND == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Run on server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          ACTION: ${{ github.event_name == 'push' && 'deploy' || inputs.action }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" "$ACTION $GITHUB_SHA"
+
+      - name: Remove key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
