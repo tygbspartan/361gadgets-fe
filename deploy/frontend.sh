@@ -127,12 +127,15 @@ build_release() {
   echo "$TARGET" > "$DEST/REVISION"
   ln -s "$SHARED_ENV" "$DEST/.env.production"
 
-  # Reuse the live release's build cache to speed up next build.
+  # Reuse the live release's compiler cache to speed up next build, but not its
+  # fetch-cache: that holds API responses, and copying it would bake data up to
+  # an hour old (e.g. categories added since) into the new build's pages.
   local prev
   prev=$(live_release)
   if [[ -n "$prev" && -d "$prev/.next/cache" ]]; then
     mkdir -p "$DEST/.next"
     cp -a "$prev/.next/cache" "$DEST/.next/"
+    rm -rf "$DEST/.next/cache/fetch-cache"
   fi
 
   cd "$DEST"
