@@ -40,11 +40,9 @@ type Side = "left" | "right";
 const onSide = (side: Side, trace: number) => (trace < TRACES.length / 2) === (side === "left");
 
 /*
- * One half of the board. Each half is fitted (meet, not slice) inside the
- * padded .hero-board box and pinned to its own edge, so the traces always run
- * in from the screen edge while the whole board stays clear of the hero's top
- * and bottom. A single slice-scaled board would be cropped top and bottom on
- * wide screens, pushing traces against both edges.
+ * One half of the board. Each half is fitted (meet, not slice) inside its
+ * .hero-board box and pinned to its own edge, so the traces always run in from
+ * the screen edge. Where the boxes go per screen size is in globals.css.
  */
 function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) {
   const traces = TRACES.map((d, i) => ({ d, i })).filter(({ i }) => onSide(side, i));
@@ -55,7 +53,7 @@ function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) 
       aria-hidden="true"
       viewBox={`${side === "left" ? 0 : HALF_W} ${BOARD_Y.top} ${HALF_W} ${BOARD_Y.height}`}
       preserveAspectRatio={side === "left" ? "xMinYMid meet" : "xMaxYMid meet"}
-      className="hero-board pointer-events-none absolute inset-x-0"
+      className={`hero-board hero-board-${side} pointer-events-none absolute`}
     >
       {spotlight ? (
         <>
@@ -72,18 +70,18 @@ function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) 
         </>
       ) : (
         <>
-          <g fill="none" stroke="#E3E3E3" strokeWidth="1.5">
+          <g fill="none" stroke="var(--hero-trace)" strokeWidth="1.5">
             {traces.map(({ d, i }) => (
               <path
                 key={d}
                 d={d}
                 pathLength={100}
                 className="hero-boot hero-trace"
-                style={{ animationDelay: `${(0.1 + (0.8 * drawOrder(i)) / LAST).toFixed(3)}s` }}
+                style={{ animationDelay: `${(0.05 + (0.5 * drawOrder(i)) / LAST).toFixed(3)}s` }}
               />
             ))}
           </g>
-          <g className="hero-boot hero-idle hero-pulses" fill="none" stroke="#C9C9C9" strokeWidth="2">
+          <g className="hero-boot hero-idle hero-pulses" fill="none" stroke="var(--hero-pulse)" strokeWidth="2">
             {PULSES.filter(({ trace }) => onSide(side, trace)).map(({ trace, delay }) => (
               <path
                 key={trace}
@@ -94,7 +92,7 @@ function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) 
               />
             ))}
           </g>
-          <g fill="#FAFAFA" stroke="#D6D6D6" strokeWidth="1.5">
+          <g fill="var(--hero-bg)" stroke="var(--hero-node)" strokeWidth="1.5">
             {nodes.map(({ x, y, trace, i }) => (
               <circle
                 key={`${x},${y}`}
@@ -103,7 +101,7 @@ function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) 
                 r="5"
                 data-park={i === PARK_NODE ? "" : undefined}
                 className="hero-boot hero-node"
-                style={{ animationDelay: `${(1.15 + (0.8 * drawOrder(trace)) / LAST).toFixed(3)}s` }}
+                style={{ animationDelay: `${(0.55 + (0.5 * drawOrder(trace)) / LAST).toFixed(3)}s` }}
               />
             ))}
           </g>
@@ -115,6 +113,8 @@ function Half({ side, spotlight = false }: { side: Side; spotlight?: boolean }) 
 
 export default function HeroStage({ children }: { children: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
+  /* The board and its spotlight, moved together by the scroll parallax. */
+  const depthRef = useRef<HTMLDivElement>(null);
   /* The boot is held (animations paused on frame 0) while the PageLoader
      overlay covers the page, so it plays when there's someone to see it. */
   const pageReady = useContext(PageReadyContext);
@@ -162,13 +162,17 @@ export default function HeroStage({ children }: { children: ReactNode }) {
       el.style.setProperty("--my", `${y.toFixed(1)}px`);
     };
 
+    /* --mx/--my are relative to the depth layer the mask sits in, which the
+       parallax shifts away from the section as the page scrolls. */
+    const layerRect = () => (depthRef.current ?? el).getBoundingClientRect();
+
     /* Reduced motion: park on the upper-left node cluster. Measured from the
        rendered node rather than recomputed, so it follows the board's fit. */
     const park = () => {
       const node = el.querySelector("[data-park]");
       if (!node) return;
       const n = node.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
+      const r = layerRect();
       setSpot(n.left + n.width / 2 - r.left, n.top + n.height / 2 - r.top);
     };
 
@@ -203,7 +207,7 @@ export default function HeroStage({ children }: { children: ReactNode }) {
       if (hovering) {
         /* Read before writing, once per frame, so the style write below never
            forces a synchronous layout. */
-        const r = el.getBoundingClientRect();
+        const r = layerRect();
         tx = clientX - r.left;
         ty = clientY - r.top;
       } else {
@@ -266,6 +270,80 @@ export default function HeroStage({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /* Clear zone: report the copy's box (everything marked data-hero-clear) to
+     the CSS mask on .hero-depth, which keeps the board off it. Offsets rather
+     than getBoundingClientRect, so the boot's slide-in transforms and the
+     scroll position don't skew the measurement. */
+  useLayoutEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const parts = [...el.querySelectorAll<HTMLElement>("[data-hero-clear]")];
+    if (parts.length === 0) return;
+
+    const boxOf = (node: HTMLElement) => {
+      let x = 0;
+      let y = 0;
+      let n: HTMLElement | null = node;
+      while (n && n !== el) {
+        x += n.offsetLeft;
+        y += n.offsetTop;
+        n = n.offsetParent as HTMLElement | null;
+      }
+      return { l: x, t: y, r: x + node.offsetWidth, b: y + node.offsetHeight };
+    };
+    const measure = () => {
+      const boxes = parts.map(boxOf);
+      el.style.setProperty("--cl", `${Math.min(...boxes.map((b) => b.l))}px`);
+      el.style.setProperty("--cr", `${Math.max(...boxes.map((b) => b.r))}px`);
+      el.style.setProperty("--ct", `${Math.min(...boxes.map((b) => b.t))}px`);
+      el.style.setProperty("--cb", `${Math.max(...boxes.map((b) => b.b))}px`);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    parts.forEach((p) => ro.observe(p));
+    /* Web fonts can change the headline's width after first paint. */
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => ro.disconnect();
+  }, []);
+
+  /* Scroll depth: the board drifts up at half speed, so it reads as sitting
+     behind the copy, and the copy fades as the hero scrolls away. Like the
+     spotlight, only CSS custom properties are written here; the transform
+     and fade themselves are .hero-depth / .hero-copy in globals.css. The hero
+     is the top of the page, so window.scrollY is how far past it we are. */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let height = el.offsetHeight;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const scrolled = Math.min(Math.max(window.scrollY, 0), height);
+      el.style.setProperty("--hero-sy", scrolled.toFixed(1));
+      el.style.setProperty("--hero-p", (scrolled / height).toFixed(4));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    const ro = new ResizeObserver(() => {
+      height = el.offsetHeight || 1;
+      onScroll();
+    });
+    ro.observe(el);
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   return (
     /* min-height in CSS, so the space is reserved before any script runs.
        Screen minus navbar, plus --hero-overlap: the brand strip below is
@@ -274,21 +352,17 @@ export default function HeroStage({ children }: { children: ReactNode }) {
     <section
       ref={sectionRef}
       data-boot-held={pageReady ? undefined : ""}
-      className="hero relative isolate flex min-h-[calc(100svh-var(--nav-h)+var(--hero-overlap))] flex-col overflow-hidden bg-[#FAFAFA]"
+      className="hero relative isolate flex min-h-[calc(100svh-var(--nav-h)+var(--hero-overlap))] flex-col overflow-hidden bg-(--hero-bg)"
     >
-      <Half side="left" />
-      <Half side="right" />
-      {/* The mask sits on a hero-sized wrapper so --mx/--my (section-relative
-          px) line up with the cursor regardless of where the halves land. */}
-      <div aria-hidden="true" className="hero-boot hero-idle hero-spot pointer-events-none absolute inset-0">
-        <Half side="left" spotlight />
-        <Half side="right" spotlight />
-      </div>
-
-      {/* Boot scan: the wrapper spans the hero and slides one hero-width, so
-          the bar at its left edge sweeps edge to edge. */}
-      <div aria-hidden="true" className="hero-boot hero-scan pointer-events-none absolute inset-0">
-        <div className="h-full w-0.5 bg-(--hero-accent) shadow-[0_0_24px_var(--hero-accent)]" />
+      <div ref={depthRef} aria-hidden="true" className="hero-depth pointer-events-none absolute inset-0">
+        <Half side="left" />
+        <Half side="right" />
+        {/* The mask sits on a layer-sized wrapper so --mx/--my (layer-relative
+            px) line up with the cursor regardless of where the halves land. */}
+        <div className="hero-boot hero-idle hero-spot absolute inset-0">
+          <Half side="left" spotlight />
+          <Half side="right" spotlight />
+        </div>
       </div>
 
       {children}

@@ -200,7 +200,11 @@ export default function OrdersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by order number, customer name, or email..."
+                placeholder={
+                  canManage
+                    ? "Search by order number, customer name or phone..."
+                    : "Search by order number..."
+                }
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -302,7 +306,7 @@ export default function OrdersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Order Number</TableHead>
-                    <TableHead>Customer</TableHead>
+                    <TableHead>{canManage ? "Customer" : "Delivery area"}</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>{canManage ? "Total" : "Your Total"}</TableHead>
                     <TableHead>Status</TableHead>
@@ -326,21 +330,33 @@ export default function OrdersPage() {
                           {order.orderNumber}
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">
-                              {order.shippingFullName}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {order.shippingPhone}
-                            </p>
-                          </div>
+                          {/* Vendors don't receive customer contact details. */}
+                          {canManage ? (
+                            <div>
+                              <p className="font-medium">
+                                {order.shippingFullName}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {order.shippingPhone}
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium">{order.shippingCity}</p>
+                              {order.shippingProvince && (
+                                <p className="text-sm text-gray-500">
+                                  {order.shippingProvince}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           {order.items.length} item
                           {order.items.length !== 1 ? "s" : ""}
                         </TableCell>
                         <TableCell className="font-semibold">
-                          {formatCurrency(order.vendorSubtotal ?? order.total)}
+                          {formatCurrency(order.vendorNet ?? order.vendorSubtotal ?? order.total)}
                         </TableCell>
 
                         {/* Order Status — editable for superadmin, read-only for vendors */}

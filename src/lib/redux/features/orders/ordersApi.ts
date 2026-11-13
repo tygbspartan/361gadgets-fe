@@ -96,8 +96,12 @@ export const ordersApi = createApi({
     }),
 
     // Get single order by order number (Customer)
-    getOrderByNumber: builder.query<Order, string>({
-      query: (orderNumber) => `/orders/${orderNumber}`,
+    // Guests pass the order's shipping email, which the server checks.
+    getOrderByNumber: builder.query<Order, { orderNumber: string; email?: string }>({
+      query: ({ orderNumber, email }) => ({
+        url: `/orders/${encodeURIComponent(orderNumber)}`,
+        params: email ? { email } : undefined,
+      }),
       transformResponse: (response: SingleOrderApiResponse) => response.data,
       providesTags: (result) =>
         result ? [{ type: "Order", id: result.id }] : [],

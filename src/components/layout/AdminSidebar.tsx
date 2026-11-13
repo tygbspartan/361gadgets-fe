@@ -20,6 +20,7 @@ import {
   Store,
   Wallet,
   Settings,
+  X,
 } from "lucide-react";
 
 // `superadminOnly` items are hidden from vendors (role "admin").
@@ -84,7 +85,19 @@ const navigation = [
   },
 ];
 
-export default function AdminSidebar() {
+/*
+ * From lg the sidebar sits in the layout. Below lg it is a slide-in drawer:
+ * `open` comes from AdminShell, and `onClose` runs on a link tap or ✕.
+ * Closed, it is also made invisible (after the slide) so its links can't
+ * take keyboard focus while off-screen.
+ */
+export default function AdminSidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
   const user = useAppSelector((state) => state.auth.user);
   const role = user?.role;
@@ -97,9 +110,23 @@ export default function AdminSidebar() {
   const showVendorBrand = !isSuper(role) && !!user?.logoUrl;
 
   return (
-    <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-screen shrink-0">
+    <div
+      id="admin-nav"
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-white border-r border-gray-200 h-dvh shrink-0 transition-[translate,visibility] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 lg:visible",
+        open ? "translate-x-0 shadow-xl" : "-translate-x-full invisible"
+      )}
+    >
       {/* Logo — vendor's company logo, or the platform logo for the superadmin */}
-      <div className="flex items-center justify-center gap-2 h-16 border-b border-gray-200 px-3">
+      <div className="relative flex items-center justify-center gap-2 h-16 border-b border-gray-200 px-3">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
         {showVendorBrand ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -132,6 +159,7 @@ export default function AdminSidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={onClose}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                   isActive

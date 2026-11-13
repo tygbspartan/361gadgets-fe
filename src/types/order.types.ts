@@ -73,6 +73,13 @@ export interface Order {
   // Vendor-scoped view only: this vendor's share of the order (sum of their
   // item subtotals). Absent for the superadmin (who sees the full order).
   vendorSubtotal?: string;
+  // Vendor view: what the vendor's own discount codes took off their items,
+  // and their share after that (vendorSubtotal - vendorDiscount).
+  vendorDiscount?: string;
+  vendorNet?: string;
+  // NOTE: the vendor view leaves out customer contact (name, phone, email,
+  // address), notes, the transaction number and order-wide totals; only
+  // shippingCity / shippingProvince are sent. Guard on role before reading them.
 
   // Relations
   user?: {
@@ -99,6 +106,8 @@ export interface OrderItem {
   price: string;
   quantity: number;
   subtotal: string;
+  // Share of a vendor-paid discount on this line ("0.00" otherwise).
+  vendorDiscount?: string;
 
   createdAt: string;
 

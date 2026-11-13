@@ -22,6 +22,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save, Loader2, AlertCircle, KeyRound, CheckCircle } from "lucide-react";
 
+// Success / error line under a form. Declared outside the page so it keeps
+// its identity between renders.
+function Notice({
+  msg,
+}: {
+  msg: { type: "ok" | "err"; text: string } | null;
+}) {
+  return msg ? (
+    <p
+      className={
+        "text-sm flex items-center gap-1 " +
+        (msg.type === "ok" ? "text-green-600" : "text-primary")
+      }
+    >
+      {msg.type === "ok" ? (
+        <CheckCircle className="h-4 w-4" />
+      ) : (
+        <AlertCircle className="h-4 w-4" />
+      )}
+      {msg.text}
+    </p>
+  ) : null;
+}
+
 export default function AdminSettingsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -137,27 +161,6 @@ export default function AdminSettingsPage() {
       });
     }
   };
-
-  const Notice = ({
-    msg,
-  }: {
-    msg: { type: "ok" | "err"; text: string } | null;
-  }) =>
-    msg ? (
-      <p
-        className={
-          "text-sm flex items-center gap-1 " +
-          (msg.type === "ok" ? "text-green-600" : "text-primary")
-        }
-      >
-        {msg.type === "ok" ? (
-          <CheckCircle className="h-4 w-4" />
-        ) : (
-          <AlertCircle className="h-4 w-4" />
-        )}
-        {msg.text}
-      </p>
-    ) : null;
 
   return (
     <div className="space-y-6">

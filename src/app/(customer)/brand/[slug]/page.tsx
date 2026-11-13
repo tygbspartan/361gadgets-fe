@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SITE_URL, buildBreadcrumbJsonLd, buildCollectionPageJsonLd } from "@/lib/seo/jsonld";
+import { SITE_URL, buildBreadcrumbJsonLd, buildCollectionPageJsonLd, toPlainText, truncate } from "@/lib/seo/jsonld";
+import JsonLd from "@/components/seo/JsonLd";
 import { getBrandBySlug, getProductsPage } from "@/lib/server/catalog";
 import CollectionView from "@/components/catalog/CollectionView";
 
@@ -21,7 +22,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   const brand = await getBrandBySlug(slug);
-  if (!brand) return {};
+  // Missing: the page calls notFound(); title the 404 to match.
+  if (!brand) return { title: "Page not found", robots: { index: false } };
 
   const cleanPath = `/brand/${slug}`;
   const pageNum = Math.max(1, Number(str(sp.page)) || 1);
@@ -30,13 +32,16 @@ export async function generateMetadata({
   );
 
   const description =
-    brand.seoDescription?.trim().slice(0, 160) ||
-    brand.metaDescription?.trim() ||
+    truncate(toPlainText(brand.metaDescription)) ||
+    truncate(toPlainText(brand.seoDescription)) ||
     `Shop genuine ${brand.name} products online in Nepal at 361 Gadgets — authentic, best prices, fast delivery.`;
+  const title = `${brand.name} Products in Nepal — Genuine | 361 Gadgets`;
 
   return {
-    title: { absolute: `${brand.name} Products in Nepal — Genuine | 361 Gadgets` },
+    title: { absolute: title },
     description,
+    openGraph: { title, description, url: cleanPath, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
     robots: hasFilterOrSort ? { index: false, follow: true } : undefined,
     alternates: {
       canonical: hasFilterOrSort
@@ -105,8 +110,8 @@ export default async function BrandPage({
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <JsonLd data={collectionJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <CollectionView
         title={brand.name}
         intro={brand.seoDescription}

@@ -291,9 +291,10 @@ export default function AdminHeroPage() {
           {sorted.map((image, index) => (
             <Card key={image.id}>
               <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+                {/* Phones: thumbnail full-width on top, details + actions below. */}
+                <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
                   {/* Thumbnail */}
-                  <div className="relative w-40 h-20 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                  <div className="relative w-full h-32 rounded-md overflow-hidden bg-gray-100 shrink-0 sm:w-40 sm:h-20">
                     <Image
                       src={image.imageUrl}
                       alt={image.altText ?? "Hero banner"}

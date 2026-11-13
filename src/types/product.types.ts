@@ -1,5 +1,11 @@
 import { Category } from "@/lib/redux/features/categories/categoriesApi";
 
+/** One question/answer pair for product and category FAQs. */
+export interface Faq {
+  question: string;
+  answer: string;
+}
+
 // Mirrors the backend Product model (prisma/schema.prisma).
 export interface Product {
   id: number;
@@ -23,6 +29,8 @@ export interface Product {
   badges: string[] | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  /** Optional FAQ shown on the product page (and as FAQPage schema). */
+  faqs?: Faq[] | null;
   createdAt: string;
   updatedAt: string;
   brand?: Brand;
@@ -75,6 +83,7 @@ export interface CreateProductRequest {
   countryOfOrigin?: string;
   metaTitle?: string;
   metaDescription?: string;
+  faqs?: Faq[] | null;
   images?: {
     imageUrl: string;
     altText?: string;

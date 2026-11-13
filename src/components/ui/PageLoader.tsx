@@ -38,7 +38,7 @@ export default function PageLoader({ progress = 0 }: { progress?: number }) {
           className="mt-8 h-0.5 w-full overflow-hidden rounded-full bg-(--hairline)"
         >
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+            className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>

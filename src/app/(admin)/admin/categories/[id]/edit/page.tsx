@@ -20,6 +20,8 @@ import {
 import { ArrowLeft, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import FaqEditor, { cleanFaqs } from "@/components/admin/FaqEditor";
+import type { Faq } from "@/types/product.types";
 
 export default function EditCategoryPage() {
   const router = useRouter();
@@ -37,11 +39,14 @@ export default function EditCategoryPage() {
     name: "",
     description: "",
     seoDescription: "",
+    seoContent: "",
     level: "1",
     parentId: "",
     displayOrder: "0",
     isActive: true,
   });
+
+  const [faqs, setFaqs] = useState<Faq[]>([]);
 
   // Error & Success states
   const [error, setError] = useState("");
@@ -55,12 +60,14 @@ export default function EditCategoryPage() {
         name: category.name || "",
         description: category.description || "",
         seoDescription: category.seoDescription || "",
+        seoContent: category.seoContent || "",
         level: category.level.toString(),
         parentId: category.parentId?.toString() || "",
         displayOrder: category.displayOrder?.toString() || "0",
         isActive: category.isActive ?? true,
       });
     }
+    if (categoryData?.data) setFaqs(categoryData.data.faqs ?? []);
   }, [categoryData]);
 
   // Filter parent categories based on selected level
@@ -100,14 +107,9 @@ export default function EditCategoryPage() {
     return [];
   };
 
-  // Reset parentId when level changes (but not on initial load)
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
-  useEffect(() => {
-    if (initialLoadDone && categoryData?.data) {
-      setFormData((prev) => ({ ...prev, parentId: "" }));
-    }
-    setInitialLoadDone(true);
-  }, [formData.level]);
+  // (The level can't be changed on this page, so there's no "reset the parent
+  // when the level changes" step: that used to fire when the saved category
+  // loaded and wiped its parent.)
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -153,7 +155,10 @@ export default function EditCategoryPage() {
       const categoryUpdateData = {
         name: formData.name,
         description: formData.description || undefined,
-        seoDescription: formData.seoDescription || undefined,
+        // "" clears a field (null), so emptied SEO copy is actually removed.
+        seoDescription: formData.seoDescription.trim() || null,
+        seoContent: formData.seoContent.trim() || null,
+        faqs: cleanFaqs(faqs),
         parentId: formData.parentId ? parseInt(formData.parentId) : undefined,
         displayOrder: parseInt(formData.displayOrder),
         isActive: formData.isActive,
@@ -282,18 +287,50 @@ export default function EditCategoryPage() {
 
             {/* SEO page copy */}
             <div className="space-y-2">
-              <Label htmlFor="seoDescription">Category page copy (SEO)</Label>
+              <Label htmlFor="seoDescription">Short intro (SEO)</Label>
               <textarea
                 id="seoDescription"
                 name="seoDescription"
                 value={formData.seoDescription}
                 onChange={handleInputChange}
-                placeholder="Long-form intro shown above the product grid on the category page…"
-                className="w-full min-h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="One or two sentences shown above the products, e.g. Shop genuine TWS earbuds in Nepal…"
+                className="w-full min-h-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-muted-foreground">
-                150–250 words recommended. Shown to shoppers and search engines; left blank shows nothing.
+                Also used as the Google description (the first ~160 characters show in results).{" "}
+                {formData.seoDescription.trim().length} characters.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Long-form SEO copy + FAQ, shown under the product grid */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Buying guide & FAQ (optional)</CardTitle>
+            <CardDescription>
+              Shown under the products on the category page (first page only). Helps shoppers and search engines.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="seoContent">Buying guide</Label>
+              <textarea
+                id="seoContent"
+                name="seoContent"
+                value={formData.seoContent}
+                onChange={handleInputChange}
+                placeholder={"## Buy TWS earbuds in Nepal\n\nA paragraph about the category…\n\n## How to choose\n- Battery life\n- Noise cancellation"}
+                className="w-full min-h-56 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave a blank line between paragraphs. Start a line with <code>## </code> for a heading
+                and <code>- </code> for a bullet point. 300–600 words works well.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Frequently asked questions</Label>
+              <FaqEditor value={faqs} onChange={setFaqs} idPrefix="category-faq" />
             </div>
           </CardContent>
         </Card>

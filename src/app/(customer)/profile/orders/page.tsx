@@ -118,9 +118,9 @@ export default function ProfileOrdersPage() {
                   className="border border-[#E2E4E5] rounded-lg px-5 lg:px-8 py-5 flex flex-col gap-3.75"
                 >
                   {/* Card Header — order number (+ status on desktop) + date */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-montserrat font-semibold text-[18px] lg:text-[20px] leading-7 text-black">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="break-all font-montserrat font-semibold text-[18px] lg:text-[20px] leading-7 text-black">
                         {order.orderNumber}
                       </span>
                       {/* Status — right of order number on desktop */}

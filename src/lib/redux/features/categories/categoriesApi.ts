@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithAuth } from "../../baseQuery";
+import type { Faq } from "@/types/product.types";
 
 export interface Category {
   id: number;
@@ -7,6 +8,10 @@ export interface Category {
   slug: string;
   description: string | null;
   seoDescription: string | null;
+  /** Optional long SEO copy under the product grid, and the category FAQ.
+      Only on single-category responses, not in lists. */
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
   parentId: number | null;
   level: number;
   displayOrder: number;
@@ -26,8 +31,11 @@ export interface CreateCategoryRequest {
 
 export interface UpdateCategoryRequest {
   name?: string;
-  description?: string;
-  seoDescription?: string;
+  description?: string | null;
+  // null (or "") clears the field
+  seoDescription?: string | null;
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
   parentId?: number;
   displayOrder?: number;
   isActive?: boolean;

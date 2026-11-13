@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import FaqEditor, { cleanFaqs } from "@/components/admin/FaqEditor";
+import type { Faq } from "@/types/product.types";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { isSuper } from "@/constants/roles";
 
@@ -98,6 +100,7 @@ export default function EditProductPage() {
   });
 
   const [colors, setColors] = useState<ColorRow[]>([]);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
   const hasColors = colors.length > 0;
   const colorsStockTotal = colors.reduce(
     (sum, c) => sum + (parseInt(c.stockQuantity) || 0),
@@ -140,6 +143,8 @@ export default function EditProductPage() {
       metaTitle: p.metaTitle || "",
       metaDescription: p.metaDescription || "",
     });
+
+    setFaqs(p.faqs ?? []);
 
     if (p.colors && p.colors.length > 0) {
       setColors(
@@ -397,6 +402,8 @@ export default function EditProductPage() {
         })),
         metaTitle: formData.metaTitle || undefined,
         metaDescription: formData.metaDescription || undefined,
+        // Always sent: an emptied list clears the FAQ.
+        faqs: cleanFaqs(faqs),
         countryOfOrigin: formData.countryOfOrigin || undefined,
         images: allImages.map((img) => ({
           imageUrl: img.imageUrl,
@@ -1016,6 +1023,19 @@ export default function EditProductPage() {
                 Recommended: 150-160 characters.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Optional product FAQ */}
+        <Card>
+          <CardHeader>
+            <CardTitle>FAQ (optional)</CardTitle>
+            <CardDescription>
+              Questions and answers shown on the product page, e.g. warranty, compatibility, what&apos;s in the box.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FaqEditor value={faqs} onChange={setFaqs} idPrefix="product-faq" />
           </CardContent>
         </Card>
 

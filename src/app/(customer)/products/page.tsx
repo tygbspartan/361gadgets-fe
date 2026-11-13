@@ -16,8 +16,10 @@ import MobileFilterSheet from "@/components/products/MobileFilterSheet";
 import SectionTitle from "@/components/home/SectionTitle";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Icon } from "@iconify/react";
+import { useGridPageSize } from "@/hooks/useGridPageSize";
 
-const PAGE_SIZE = 5;
+/** Skeleton count before the viewport (and so the page size) is known. */
+const FALLBACK_PAGE_SIZE = 20;
 /** Longest the new batch waits on its images before showing regardless. */
 const REVEAL_CAP_MS = 2500;
 
@@ -36,6 +38,23 @@ function ProductListingContent() {
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // A whole number of grid rows per page (see useGridPageSize). Null until the
+  // viewport is known, so the first request isn't made with the wrong size.
+  const pageSize = useGridPageSize();
+
+  /*
+   * When the size changes (a tablet rotated, a window resized across a
+   * breakpoint), move to the page that holds the first product the customer
+   * was looking at, rather than jumping to a different stretch of the list.
+   */
+  const [prevPageSize, setPrevPageSize] = useState(pageSize);
+  if (pageSize !== prevPageSize) {
+    setPrevPageSize(pageSize);
+    if (pageSize && prevPageSize) {
+      setCurrentPage(Math.floor(((currentPage - 1) * prevPageSize) / pageSize) + 1);
+    }
+  }
+
   /*
    * `currentData`, not `data`: on a page/filter change RTK Query keeps handing
    * back the previous result in `data` until the new one lands, which left the
@@ -49,7 +68,7 @@ function ProductListingContent() {
     error,
   } = useGetProductsQuery({
     page: currentPage,
-    limit: PAGE_SIZE,
+    limit: pageSize ?? FALLBACK_PAGE_SIZE,
     categorySlug: categorySlug || undefined,
     brandSlug: brandSlug || undefined,
     search: searchQuery || undefined,
@@ -58,7 +77,7 @@ function ProductListingContent() {
     sortBy,
     sortOrder,
     isActive: true,
-  });
+  }, { skip: pageSize === null });
 
   const { data: categoriesData } = useGetCategoriesQuery();
   const { data: brandsData } = useGetBrandsQuery();
@@ -218,8 +237,8 @@ function ProductListingContent() {
                 {!revealed && (
                   <>
                     <span className="sr-only" role="status">Loading products</span>
-                    <div className="products-grid">
-                      {Array.from({ length: PAGE_SIZE }, (_, i) => (
+                    <div className="products-grid products-grid-listing">
+                      {Array.from({ length: pageSize ?? FALLBACK_PAGE_SIZE }, (_, i) => (
                         <ProductCardSkeleton key={i} />
                       ))}
                     </div>
@@ -230,7 +249,7 @@ function ProductListingContent() {
                 {productsData && (
                   <div
                     ref={gridRef}
-                    className={`products-grid transition-opacity duration-300 ${
+                    className={`products-grid products-grid-listing transition-opacity duration-300 ${
                       revealed ? "opacity-100" : "pointer-events-none absolute inset-x-0 top-0 opacity-0"
                     }`}
                   >
@@ -261,16 +280,17 @@ function ProductListingContent() {
                   "px-3 py-2 flex items-center gap-1 border border-[#E9E9E9] rounded-sm font-inter font-normal text-[14px] leading-5 text-[#313131] hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
                 return (
-                  <div className="mt-12 flex justify-end">
-                    <div className="flex items-center gap-2">
+                  <div className="mt-12 flex justify-center sm:justify-end">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => handlePageChange(cur - 1)}
                         disabled={cur === 1}
+                        aria-label="Previous page"
                         data-cursor-disabled="Already on the first page"
                         className={navClass}
                       >
                         <ChevronLeft className="w-4 h-4" />
-                        Back
+                        <span className="hidden sm:inline">Back</span>
                       </button>
 
                       {items.map((item, idx) =>
@@ -299,10 +319,11 @@ function ProductListingContent() {
                       <button
                         onClick={() => handlePageChange(cur + 1)}
                         disabled={cur === total}
+                        aria-label="Next page"
                         data-cursor-disabled="Already on the last page"
                         className={navClass}
                       >
-                        Next
+                        <span className="hidden sm:inline">Next</span>
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>

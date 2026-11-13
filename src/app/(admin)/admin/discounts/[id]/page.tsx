@@ -28,7 +28,12 @@ export default function DiscountDetailPage({
   const role = useAppSelector((state) => state.auth.user?.role);
   const showOwner = isSuper(role);
 
-  const { data: discount, isLoading, error } = useGetDiscountQuery(discountId);
+  // A non-numeric id in the URL (e.g. /admin/discounts/abc) shows "not found"
+  // without asking the server for /discounts/NaN.
+  const validId = Number.isInteger(discountId) && discountId > 0;
+  const { data: discount, isLoading, error } = useGetDiscountQuery(discountId, {
+    skip: !validId,
+  });
 
   if (isLoading) {
     return (

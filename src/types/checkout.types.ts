@@ -12,7 +12,7 @@ export interface ShippingInfo {
 
 export interface CheckoutRequest {
   shippingInfo: ShippingInfo;
-  paymentMethod: "cod" | "qr";
+  paymentMethod: "cod" | "esewa";
   transactionNumber?: string;
   customerNote?: string;
   discountCode?: string;
@@ -73,7 +73,9 @@ export interface CheckoutResponse {
 
 export interface DiscountValidationRequest {
   code: string;
-  cartSubtotal: number;
+  // The server prices these itself and works out which ones the code covers
+  // (a vendor's code only applies to that vendor's products).
+  items: { productId: number; quantity: number }[];
 }
 
 export interface DiscountValidationResponse {
@@ -81,6 +83,8 @@ export interface DiscountValidationResponse {
   message: string;
   data: {
     valid: boolean;
+    // Why the code can't be applied, when valid is false.
+    message?: string;
     discount?: {
       id: number;
       name: string;
@@ -88,6 +92,9 @@ export interface DiscountValidationResponse {
       type: "percentage" | "fixed";
       value: number;
       discountAmount: number;
+      // Subtotal of the items the code applies to (less than the cart
+      // subtotal when it only covers some of them).
+      eligibleSubtotal: number;
     };
   };
 }

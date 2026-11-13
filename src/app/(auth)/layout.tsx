@@ -4,6 +4,10 @@ import { FlyProvider } from "@/components/providers/FlyProvider";
 import LoadingProvider from "@/components/providers/LoadingProvider";
 import { ToastProvider } from "@/components/ui/ToastStack";
 import CursorFollower from "@/components/ui/CursorFollower";
+import type { Metadata } from "next";
+import { FORM_ROBOTS } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = { robots: FORM_ROBOTS };
 
 export default function AuthLayout({
   children,

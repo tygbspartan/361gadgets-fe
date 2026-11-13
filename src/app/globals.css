@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Enter/exit animation utilities (animate-in, fade-in-0, zoom-in-95 …) used by
+   the dialog, dropdown and select components. */
+@import "tw-animate-css";
 
 /* Short windows (e.g. a 1280×720 laptop): used to tighten full-screen
    sections, like the footer, so they still fit in one screen. */
@@ -135,47 +138,81 @@
    ========================================================================== */
 .hero {
   --hero-accent: var(--brand-accent);
+  /* The board's greys, darkest last: background, resting traces, node
+     outlines, idle pulses. Kept as one set so they stay in step. */
+  --hero-bg: #ececec;
+  --hero-trace: #d0d0d0;
+  --hero-node: #bdbdbd;
+  --hero-pulse: #aaaaaa;
   /* Spotlight centre; overwritten every frame by HeroStage. The fallback sits
      on the upper-left node cluster for the no-JS / pre-hydration frame. */
   --mx: 23.6%;
   --my: 37.8%;
 }
 
-/* The box each board half is fitted into: the hero minus breathing room top
-   and bottom. The bottom also clears the brand strip, which rides up over the
-   hero by --hero-overlap. */
+/* Where each board half sits.
+   Laptop and up: each half gets its own side of the hero (50% wide, the hero
+   minus breathing room top and bottom; the bottom also clears the brand strip,
+   which rides up over the hero by --hero-overlap). It is fitted inside that
+   box, so the halves can never meet in the middle.
+   Below lg there's no room beside the copy, so the halves frame it diagonally
+   instead: left half from the top-left corner, right half from the
+   bottom-right, each sized to the screen width at the art's own proportions.
+   Either way the clear zone on .hero-depth keeps them off the text. */
 .hero-board {
   top: 24px;
   bottom: calc(var(--hero-overlap) + 24px);
-  width: 100%;
+  width: 50%;
   height: calc(100% - 48px - var(--hero-overlap));
   /* The edge-cap nodes sit on the board's top/bottom edge. */
   overflow: visible;
 }
-/* Below md the two fitted halves are each wider than half the screen and
-   cross behind the headline, so the board is left out on phones. */
-@media (max-width: 767px) {
+.hero-board-left {
+  left: 0;
+}
+.hero-board-right {
+  right: 0;
+}
+@media (max-width: 1023.98px) {
   .hero-board {
-    display: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 720 / 740;
+  }
+  .hero-board-left {
+    top: 16px;
+    bottom: auto;
+  }
+  .hero-board-right {
+    top: auto;
+    bottom: calc(var(--hero-overlap) + 16px);
+  }
+}
+/* Phones draw the board at about half size; thicker lines keep it legible. */
+@media (max-width: 767.98px) {
+  .hero-board .hero-trace {
+    stroke-width: 2.5;
+  }
+  .hero-board .hero-pulse {
+    stroke-width: 3.5;
+  }
+  .hero-board .hero-node {
+    stroke-width: 2.5;
   }
 }
 
 /* Phase 1 — boot */
 .hero-trace {
   stroke-dasharray: 100;
-  animation: hero-draw 1.1s cubic-bezier(0.6, 0, 0.2, 1) both;
+  animation: hero-draw 0.8s cubic-bezier(0.6, 0, 0.2, 1) both;
 }
 .hero-node {
   transform-box: fill-box;
   transform-origin: center;
-  animation: hero-pop 0.45s ease-out both;
-}
-.hero-scan {
-  opacity: 0;
-  animation: hero-scan 1.6s linear 0.2s both;
+  animation: hero-pop 0.4s ease-out both;
 }
 .hero-slide {
-  animation: hero-slide 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: hero-slide 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .hero-rise {
   animation: hero-rise 0.6s ease-out both;
@@ -183,7 +220,7 @@
 
 /* Phase 2 — idle: pulses and spotlight fade in once the board is up. */
 .hero-idle {
-  animation: hero-fade 0.8s ease 2.1s both;
+  animation: hero-fade 0.8s ease 1.2s both;
 }
 .hero-pulse {
   stroke-dasharray: 4 96;
@@ -192,6 +229,47 @@
 .hero-spot {
   -webkit-mask-image: radial-gradient(circle 240px at var(--mx) var(--my), #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
   mask-image: radial-gradient(circle 240px at var(--mx) var(--my), #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+}
+
+/* Scroll depth (HeroStage writes --hero-sy, px scrolled past the top as a bare
+   number, and --hero-p, the same as 0–1 of the hero's height). The board is
+   pushed down by half the scroll, so on screen it rises at half speed behind
+   the copy; the copy scrolls normally and is gone by ~60% of the way. */
+.hero-depth {
+  transform: translate3d(0, calc(var(--hero-sy, 0) * 0.5px), 0);
+  will-change: transform;
+
+  /* Clear zone: the board fades out around the copy so a trace never runs
+     under the text, at any screen size. HeroStage measures the copy's box
+     (--cl/--cr/--ct/--cb, px within the hero). Two gradients, one across and
+     one down, each see-through only over the copy's span; added together they
+     leave just the copy's rectangle (plus padding) clear, with a soft edge.
+     The vertical one is offset by the parallax shift, since this layer moves
+     and the copy doesn't. */
+  --clear-pad: 20px;
+  --clear-fade: 56px;
+  --clear-shift: calc(var(--hero-sy, 0) * 0.5px);
+  --clear-x: linear-gradient(
+    to right,
+    #000 calc(var(--cl, 50%) - var(--clear-pad) - var(--clear-fade)),
+    transparent calc(var(--cl, 50%) - var(--clear-pad)),
+    transparent calc(var(--cr, 50%) + var(--clear-pad)),
+    #000 calc(var(--cr, 50%) + var(--clear-pad) + var(--clear-fade))
+  );
+  --clear-y: linear-gradient(
+    to bottom,
+    #000 calc(var(--ct, 50%) - var(--clear-shift) - var(--clear-pad) - var(--clear-fade)),
+    transparent calc(var(--ct, 50%) - var(--clear-shift) - var(--clear-pad)),
+    transparent calc(var(--cb, 50%) - var(--clear-shift) + var(--clear-pad)),
+    #000 calc(var(--cb, 50%) - var(--clear-shift) + var(--clear-pad) + var(--clear-fade))
+  );
+  -webkit-mask-image: var(--clear-x), var(--clear-y);
+  mask-image: var(--clear-x), var(--clear-y);
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
+}
+.hero-copy {
+  opacity: max(0, 1 - var(--hero-p, 0) * 1.6);
 }
 
 .hero-btn {
@@ -223,6 +301,12 @@
   .hero-btn {
     transition: none;
   }
+  .hero-depth {
+    transform: none;
+  }
+  .hero-copy {
+    opacity: 1;
+  }
 }
 
 @keyframes hero-draw {
@@ -242,20 +326,6 @@
   }
   100% {
     transform: scale(1);
-  }
-}
-@keyframes hero-scan {
-  0% {
-    opacity: 0;
-    transform: translateX(0);
-  }
-  8%,
-  92% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
   }
 }
 @keyframes hero-slide {
@@ -290,6 +360,28 @@
   }
   to {
     stroke-dashoffset: -100;
+  }
+}
+
+/* 404 page (app/not-found.tsx): the spark across the broken trace flickers
+   like a loose connection — mostly off, with short irregular bursts. */
+.nf-spark {
+  animation: nf-spark 2.4s steps(1, end) infinite;
+}
+@keyframes nf-spark {
+  0%, 18%, 26%, 60%, 64%, 100% {
+    opacity: 0;
+  }
+  20%, 24%, 62% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-spark {
+    animation: none;
   }
 }
 
@@ -385,7 +477,9 @@
   }
 }
 
-/* Products listing grid: 2 cols on mobile, 3 cols up to 1350px, 4 cols above. */
+/* Products listing grid, by device: 2 cols on mobile, 3 on tablet (768+),
+   4 on laptop (1024+), 5 on desktop (1350+) — the same steps as the
+   homepage grids above. */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -397,11 +491,25 @@
     gap: 1rem;
   }
 }
-@media (min-width: 1400px) {
+@media (min-width: 1024px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1.25rem;
   }
+}
+@media (min-width: 1350px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* The listings (All Products, category and brand pages) pack cards tighter
+   than the homepage (the filter sidebar takes width), so their padding would
+   swing between 12px and 20px with card width. A flat 14px keeps every card
+   in a listing the same.
+   Wins over the card's own p-3 / @[13.5rem]:p-5 by specificity. */
+.products-grid-listing .product-card {
+  padding: 14px;
 }
 
 /* Container with fluid side padding: locked at 24px through mobile
@@ -437,6 +545,13 @@
 /* Bottom nav shadow */
 .navbar-shadow {
   box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.06);
+}
+
+/* The category bar and its dropdown panel: black at the edges, lifting to
+   charcoal in the middle. One class for both so the panel reads as the bar
+   opening downward. */
+.chrome-sheen {
+  background: linear-gradient(to right in oklab, var(--chrome-dark), #333333, var(--chrome-dark));
 }
 
 /*

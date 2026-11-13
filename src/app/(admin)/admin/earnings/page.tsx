@@ -174,6 +174,11 @@ export default function EarningsPage() {
                 <p className="text-2xl font-bold mt-1">
                   {totals ? formatCurrency(totals.grossSales) : "—"}
                 </p>
+                {totals && parseFloat(totals.vendorDiscounts) > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {formatCurrency(totals.vendorDiscounts)} in vendor-paid discounts
+                  </p>
+                )}
               </div>
               <TrendingUp className="h-8 w-8 text-gray-300" />
             </div>
@@ -245,6 +250,7 @@ export default function EarningsPage() {
                     <TableHead className="text-right">Units</TableHead>
                     <TableHead className="text-right">Orders</TableHead>
                     <TableHead className="text-right">Gross sales</TableHead>
+                    <TableHead className="text-right">Their discounts</TableHead>
                     <TableHead className="text-right">Owed</TableHead>
                     <TableHead className="text-right">Pending</TableHead>
                   </TableRow>
@@ -278,6 +284,11 @@ export default function EarningsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(row.grossSales)}
+                      </TableCell>
+                      <TableCell className="text-right text-gray-500">
+                        {parseFloat(row.vendorDiscounts) > 0
+                          ? `−${formatCurrency(row.vendorDiscounts)}`
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-primary">
                         {formatCurrency(row.amountOwed)}

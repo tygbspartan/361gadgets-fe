@@ -22,14 +22,18 @@ interface Props {
   shippingInfo: ShippingInfo;
   onShippingChange: (info: ShippingInfo) => void;
   formErrors: Record<string, string>;
-  paymentMethod: "cod" | "qr";
-  onPaymentMethodChange: (method: "cod" | "qr") => void;
+  paymentMethod: "cod" | "esewa";
+  onPaymentMethodChange: (method: "cod" | "esewa") => void;
   transactionNumber: string;
   onTransactionNumberChange: (val: string) => void;
   customerNote: string;
   onCustomerNoteChange: (val: string) => void;
   total: number;
+  // Live delivery rates from Settings, for the hint under the district.
+  shippingRates: { insideValley: number; outsideValley: number; freeOver: number };
 }
+
+const rs = (n: number) => `Rs. ${n.toLocaleString("en-IN")}`;
 
 export default function ShippingDetails({
   shippingInfo,
@@ -42,6 +46,7 @@ export default function ShippingDetails({
   customerNote,
   onCustomerNoteChange,
   total,
+  shippingRates,
 }: Props) {
   const update = (field: keyof ShippingInfo, value: string) =>
     onShippingChange({ ...shippingInfo, [field]: value });
@@ -81,6 +86,9 @@ export default function ShippingDetails({
               id="phone"
               value={shippingInfo.phone}
               onChange={(e) => update("phone", e.target.value)}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
               placeholder="9841234567"
               className={`${INP} ${formErrors.phone ? "border-red-500" : ""}`}
             />
@@ -162,8 +170,14 @@ export default function ShippingDetails({
             <div className="flex items-start gap-1.5 mt-1.5">
               <Icon icon="ph:info-thin" width={14} height={14} className="text-[#575F6E] shrink-0 mt-px" />
               <p className="font-montserrat font-light text-[11px] lg:text-[12px] leading-4 text-[#575F6E]">
-                Inside Kathmandu Valley: Rs. 100<br />
-                Outside Valley: Rs. 200.
+                Inside Kathmandu Valley: {rs(shippingRates.insideValley)}<br />
+                Outside Valley: {rs(shippingRates.outsideValley)}.
+                {shippingRates.freeOver > 0 && (
+                  <>
+                    <br />
+                    Free delivery on orders over {rs(shippingRates.freeOver)}.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -217,6 +231,9 @@ export default function ShippingDetails({
               id="postalCode"
               value={shippingInfo.postalCode}
               onChange={(e) => update("postalCode", e.target.value)}
+              inputMode="numeric"
+              maxLength={5}
+              autoComplete="postal-code"
               placeholder="44600"
               className={`${INP} ${formErrors.postalCode ? "border-red-500" : ""}`}
             />
@@ -250,7 +267,7 @@ export default function ShippingDetails({
 
         <RadioGroup
           value={paymentMethod}
-          onValueChange={(v) => onPaymentMethodChange(v as "cod" | "qr")}
+          onValueChange={(v) => onPaymentMethodChange(v as "cod" | "esewa")}
         >
           <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg mb-3 hover:border-primary transition-colors cursor-pointer">
             <RadioGroupItem value="cod" id="cod" />
@@ -268,7 +285,7 @@ export default function ShippingDetails({
           </div>
 
           <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-primary transition-colors cursor-pointer">
-            <RadioGroupItem value="qr" id="qr" className="mt-0.75" />
+            <RadioGroupItem value="esewa" id="qr" className="mt-0.75" />
             <label htmlFor="qr" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-3">
                 <Icon icon="bx:qr" width={20} height={20} className="text-gray-600 shrink-0" />
@@ -282,7 +299,7 @@ export default function ShippingDetails({
                 </div>
               </div>
 
-              {paymentMethod === "qr" && (
+              {paymentMethod === "esewa" && (
                 <div className="mt-4 flex flex-col gap-4">
                   {/* QR image + instructions — stacked on mobile, side by side on desktop */}
                   <div className="flex flex-col lg:flex-row gap-5 items-start">

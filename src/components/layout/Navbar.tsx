@@ -490,7 +490,7 @@ export default function Navbar() {
           ref={catBarRef}
           onMouseLeave={() => setOpenCat(null)}
           inert={stepAside}
-          className={`relative hidden lg:block bg-(--chrome-dark) navbar-shadow ${stepBack} ${
+          className={`relative hidden lg:block chrome-sheen navbar-shadow ${stepBack} ${
             stepAside ? "-translate-y-2" : "translate-y-0"
           }`}
         >
@@ -551,7 +551,7 @@ export default function Navbar() {
           >
             <div
               onClick={() => setOpenCat(null)}
-              className={`max-h-[calc(100vh-var(--nav-h)-2rem)] overflow-y-auto border-t border-white/10 bg-(--chrome-dark) transition-transform duration-300 ease-out ${
+              className={`max-h-[calc(100vh-var(--nav-h)-2rem)] overflow-y-auto chrome-sheen transition-transform duration-300 ease-out ${
                 megaOpen ? "translate-y-0" : "-translate-y-full"
               }`}
             >
@@ -623,11 +623,37 @@ export default function Navbar() {
                         <ChevronRight className="h-4 w-4 group-open:rotate-90 transition-transform" />
                       </summary>
                       <div className="ml-4 mt-1 space-y-1">
-                        {level1.children?.map((level2) => (
+                        {level1.children?.map((level2) =>
+                          !level2.children?.length ? (
+                            <Link
+                              key={level2.id}
+                              href={`${ROUTES.CATEGORY}/${level2.slug}`}
+                              className="block px-3 py-2 hover:bg-gray-50 rounded-md text-sm text-gray-700"
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
+                              {level2.name}
+                            </Link>
+                          ) : (
                           <details key={level2.id} className="group/sub">
-                            <summary className="flex items-center justify-between cursor-pointer px-3 py-2 hover:bg-gray-50 rounded-md text-sm text-gray-700">
-                              <span>{level2.name}</span>
-                              <ChevronRight className="h-3 w-3 group-open/sub:rotate-90 transition-transform" />
+                            {/* The name opens the level-2 category page (all of
+                                its products); the arrow expands its subcategories. */}
+                            <summary className="flex items-center justify-between rounded-md text-sm text-gray-700 hover:bg-gray-50 list-none [&::-webkit-details-marker]:hidden">
+                              <Link
+                                href={`${ROUTES.CATEGORY}/${level2.slug}`}
+                                className="flex-1 px-3 py-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMobileMenuOpen(false);
+                                }}
+                              >
+                                {level2.name}
+                              </Link>
+                              <span
+                                className="cursor-pointer px-3 py-2"
+                                aria-label={`Show ${level2.name} subcategories`}
+                              >
+                                <ChevronRight className="h-3 w-3 group-open/sub:rotate-90 transition-transform" />
+                              </span>
                             </summary>
                             <div className="ml-4 mt-1 space-y-1">
                               {level2.children?.map((level3) => (
@@ -642,7 +668,8 @@ export default function Navbar() {
                               ))}
                             </div>
                           </details>
-                        ))}
+                          )
+                        )}
                       </div>
                     </details>
                   ))}

@@ -13,6 +13,7 @@ export default function CollectionView({
   hrefForPage,
   brands,
   showBrandFilter = true,
+  footer,
 }: {
   title: string;
   intro?: string | null;
@@ -22,6 +23,8 @@ export default function CollectionView({
   hrefForPage: (n: number) => string;
   brands: BrandOption[];
   showBrandFilter?: boolean;
+  /** Full-width content under the grid (SEO copy, FAQ). */
+  footer?: React.ReactNode;
 }) {
   // Compact page window: 1 … p-1 p p+1 … last
   const pages: (number | "…")[] = [];
@@ -61,7 +64,7 @@ export default function CollectionView({
             </Link>
           </div>
         ) : (
-          <div className="products-grid">
+          <div className="products-grid products-grid-listing">
             {products.map((product) => (
               <ProductGridCard key={product.id} product={product} />
             ))}
@@ -104,6 +107,8 @@ export default function CollectionView({
           </nav>
         )}
       </CollectionFilterLayout>
+
+      {footer && <div className="space-y-10 border-t border-[#E9E9E9] pt-10">{footer}</div>}
     </div>
   );
 }

@@ -1,22 +1,20 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL as SITE } from "@/lib/seo/jsonld";
 
-const SITE = "https://www.361gadgets.com";
-
-// Private / functional surfaces kept out of search (and AI) crawling.
+// Private surfaces crawlers never need to fetch. Their pages are also marked
+// noindex, in case a link elsewhere gets one listed anyway.
+//
+// Deliberately NOT blocked, because they carry "noindex, follow" and a blocked
+// page's noindex can't be read: /products (the filter UI; its links lead to
+// every product) and the sign-in forms.
 const DISALLOW = [
   "/admin",
   "/account",
   "/checkout",
   "/cart",
   "/wishlist",
-  "/products", // the filter UI — category/brand pages are the indexable surfaces
   "/profile",
   "/order-confirmation",
-  "/login",
-  "/register",
-  "/verify-email",
-  "/forgot-password",
-  "/reset-password",
   "/auth",
 ];
 
@@ -37,6 +35,5 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "*", allow: "/", disallow: DISALLOW },
     ],
     sitemap: `${SITE}/sitemap.xml`,
-    host: SITE,
   };
 }

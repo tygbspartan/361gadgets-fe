@@ -15,7 +15,13 @@ import {
 import { ShippingInfo } from "@/types/checkout.types";
 import { ROUTES } from "@/constants/routes";
 import { useToast, useToastHelpers } from "@/components/ui/ToastStack";
-import { KATHMANDU_VALLEY_CITIES, SHIPPING_COSTS } from "@/constants/checkout";
+import {
+  NEPAL_MOBILE_REGEX,
+  NEPAL_POSTAL_REGEX,
+  SHIPPING_COSTS,
+  VALLEY_DISTRICTS,
+  normalizeNepalPhone,
+} from "@/constants/checkout";
 import { useGetPublicSettingsQuery } from "@/lib/redux/features/settings/settingsApi";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import ShippingDetails from "@/components/checkout/ShippingDetails";
@@ -33,6 +39,7 @@ export default function CheckoutPage() {
   // (double-click / network error) so the order is never created twice, and
   // reset only after a confirmed success so the next order gets a fresh key.
   const idempotencyKeyRef = useRef<string | null>(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const { showToast } = useToast();
   const { toastError } = useToastHelpers();
   const [validateDiscount, { isLoading: isValidatingDiscount }] = useValidateDiscountMutation();
@@ -49,7 +56,7 @@ export default function CheckoutPage() {
     postalCode: "",
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "qr">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "esewa">("cod");
   const [transactionNumber, setTransactionNumber] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [discountCode, setDiscountCode] = useState("");
@@ -96,28 +103,54 @@ export default function CheckoutPage() {
   const shippingCost = (() => {
     // Mirrors the backend: free above the threshold, else valley-based rate.
     if (subtotal >= freeShippingThreshold) return 0;
-    const city = shippingInfo.city.toLowerCase().trim();
-    const inValley = KATHMANDU_VALLEY_CITIES.some(
-      (c) => city.includes(c) || c.includes(city)
-    );
-    return inValley ? insideValleyCost : outsideValleyCost;
+    return VALLEY_DISTRICTS.includes(shippingInfo.city) ? insideValleyCost : outsideValleyCost;
   })();
 
   const discountAmount = appliedDiscount?.discountAmount ?? 0;
   const total = subtotal + shippingCost - discountAmount;
 
+  /*
+   * Apply cooldown: the server allows a few code checks a minute. After a 429
+   * the Apply button stays disabled, counting down the server's retryAfter.
+   */
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!cooldownUntil) return;
+    const tick = window.setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= cooldownUntil) {
+        setCooldownUntil(0);
+        setDiscountError("");
+      }
+    }, 1000);
+    return () => window.clearInterval(tick);
+  }, [cooldownUntil]);
+  const applyCooldown = cooldownUntil ? Math.max(0, Math.ceil((cooldownUntil - now) / 1000)) : 0;
+
   const handleApplyDiscount = async () => {
+    if (applyCooldown > 0) return;
     if (!discountCode.trim()) { setDiscountError("Please enter a discount code"); return; }
     setDiscountError("");
     try {
-      const result = await validateDiscount({ code: discountCode, cartSubtotal: subtotal }).unwrap();
+      const result = await validateDiscount({
+        code: discountCode,
+        items: checkoutItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      }).unwrap();
       if (result.data.valid && result.data.discount) {
         setAppliedDiscount(result.data.discount);
       } else {
-        setDiscountError("Invalid or expired discount code");
+        setDiscountError(result.data.message || "This discount code can't be applied");
         setAppliedDiscount(null);
       }
     } catch (error: any) {
+      if (error?.status === 429) {
+        const seconds = Number(error.data?.retryAfter) || 60;
+        const t = Date.now();
+        setNow(t);
+        setCooldownUntil(t + seconds * 1000);
+      }
       setDiscountError(error?.data?.message || "Failed to validate discount code");
       setAppliedDiscount(null);
     }
@@ -133,8 +166,8 @@ export default function CheckoutPage() {
     const errors: Record<string, string> = {};
     if (!shippingInfo.fullName.trim()) errors.fullName = "Full name is required";
     if (!shippingInfo.phone.trim()) errors.phone = "Phone number is required";
-    else if (!/^98\d{8}$/.test(shippingInfo.phone.trim()))
-      errors.phone = "Invalid phone number (10 digits starting with 98)";
+    else if (!NEPAL_MOBILE_REGEX.test(normalizeNepalPhone(shippingInfo.phone)))
+      errors.phone = "Enter a 10-digit mobile number starting with 97 or 98";
     if (!shippingInfo.email.trim()) errors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingInfo.email))
       errors.email = "Invalid email address";
@@ -143,7 +176,9 @@ export default function CheckoutPage() {
     if (!shippingInfo.city.trim()) errors.city = "City is required";
     if (!shippingInfo.province) errors.province = "Province is required";
     if (!shippingInfo.postalCode.trim()) errors.postalCode = "Postal code is required";
-    if (paymentMethod === "qr" && !transactionNumber.trim())
+    else if (!NEPAL_POSTAL_REGEX.test(shippingInfo.postalCode.trim()))
+      errors.postalCode = "Postal code must be 5 digits";
+    if (paymentMethod === "esewa" && !transactionNumber.trim())
       errors.transactionNumber = "Transaction number is required for QR payment";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -170,7 +205,7 @@ export default function CheckoutPage() {
         idempotencyKey: idempotencyKeyRef.current,
         shippingInfo,
         paymentMethod,
-        transactionNumber: paymentMethod === "qr" ? transactionNumber : undefined,
+        transactionNumber: paymentMethod === "esewa" ? transactionNumber : undefined,
         customerNote: customerNote.trim() || undefined,
         discountCode: appliedDiscount?.code || undefined,
         // Authenticated: server reads the cart by ids. Guest: send line items.
@@ -187,6 +222,9 @@ export default function CheckoutPage() {
 
       // Order confirmed — retire this key so a future checkout starts fresh.
       idempotencyKeyRef.current = null;
+      // The cart empties next; hold this page on a redirect state rather than
+      // flashing "Your cart is empty" before the confirmation page loads.
+      setOrderPlaced(true);
 
       // Guest cart lives client-side, so clear the items we just ordered.
       if (isGuest) {
@@ -200,10 +238,20 @@ export default function CheckoutPage() {
         variant: "positive",
       });
       const email = encodeURIComponent(shippingInfo.email);
-      router.push(
+      // replace: Back from the confirmation shouldn't return to an emptied checkout.
+      router.replace(
         `/order-confirmation/${result.data.orderNumber}${isGuest ? `?email=${email}` : ""}`
       );
     } catch (error: any) {
+      // The code stopped applying between Apply and Place Order (expired, limit
+      // reached, already used). Nothing was ordered: drop the discount so the
+      // summary shows the real total, and let the customer place it again.
+      if (error?.data?.code === "DISCOUNT_INVALID") {
+        setAppliedDiscount(null);
+        setDiscountError(error.data.message);
+        toastError(`${error.data.message} Your order wasn't placed — please review the new total.`);
+        return;
+      }
       toastError(error?.data?.message || "Failed to place order. Please try again.");
     }
   };
@@ -213,6 +261,15 @@ export default function CheckoutPage() {
       <div className="page-wrapper pb-16 text-center">
         <Loader2 className="h-12 w-12 mx-auto animate-spin" />
         <p className="mt-4 text-gray-600">Loading…</p>
+      </div>
+    );
+  }
+
+  if (orderPlaced) {
+    return (
+      <div className="page-wrapper pb-16 text-center" role="status">
+        <Loader2 className="h-12 w-12 mx-auto animate-spin" />
+        <p className="mt-4 text-gray-600">Order placed. Taking you to your order…</p>
       </div>
     );
   }
@@ -237,8 +294,9 @@ export default function CheckoutPage() {
   return (
     <div className="page-wrapper">
       <div className="flex flex-col lg:flex-row gap-5 lg:gap-8 lg:mt-6 items-start">
-        {/* Order Summary — 40% */}
-        <div className="w-full lg:w-[40%] lg:sticky lg:top-6">
+        {/* Order Summary — 40%. Below lg it comes after the form, so Place
+           Order sits where the shopper finishes rather than above the form. */}
+        <div className="order-2 w-full lg:order-1 lg:w-[40%] lg:sticky lg:top-6">
           <OrderSummary
             checkoutItems={checkoutItems}
             isGuest={isGuest}
@@ -250,6 +308,7 @@ export default function CheckoutPage() {
             discountCode={discountCode}
             discountError={discountError}
             isValidatingDiscount={isValidatingDiscount}
+            applyCooldown={applyCooldown}
             isCheckingOut={isCheckingOut}
             onDiscountCodeChange={setDiscountCode}
             onApplyDiscount={handleApplyDiscount}
@@ -259,7 +318,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Shipping Details — 60% */}
-        <div className="w-full lg:w-[60%]">
+        <div className="order-1 w-full lg:order-2 lg:w-[60%]">
           <ShippingDetails
             shippingInfo={shippingInfo}
             onShippingChange={setShippingInfo}
@@ -271,6 +330,11 @@ export default function CheckoutPage() {
             customerNote={customerNote}
             onCustomerNoteChange={setCustomerNote}
             total={total}
+            shippingRates={{
+              insideValley: insideValleyCost,
+              outsideValley: outsideValleyCost,
+              freeOver: freeShippingThreshold,
+            }}
           />
         </div>
       </div>

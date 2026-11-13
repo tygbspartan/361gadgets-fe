@@ -2,9 +2,12 @@
 //
 // Money is collected into the platform (superadmin) account, so these figures
 // show how much each vendor generated and how much the platform still owes them.
-//   grossSales    = the vendor's item subtotals (price × qty), cancelled excluded
-//   amountOwed    = payable now = orders that are BOTH paid AND delivered
-//   pendingPayout = grossSales − amountOwed (sold, not yet payable)
+//   grossSales      = the vendor's item subtotals (price × qty), cancelled excluded
+//   vendorDiscounts = taken off by the vendor's own discount codes (they pay
+//                     for those; platform codes never reduce vendor earnings)
+//   netSales        = grossSales − vendorDiscounts
+//   amountOwed      = payable now = net sales on orders BOTH paid AND delivered
+//   pendingPayout   = netSales − amountOwed (sold, not yet payable)
 
 export interface EarningsDateRange {
   start: string | null;
@@ -28,12 +31,16 @@ export interface VendorEarningsRow {
   unitsSold: number;
   orderCount: number;
   grossSales: string;
+  vendorDiscounts: string;
+  netSales: string;
   amountOwed: string;
   pendingPayout: string;
 }
 
 export interface VendorEarningsTotals {
   grossSales: string;
+  vendorDiscounts: string;
+  netSales: string;
   amountOwed: string;
   pendingPayout: string;
 }
@@ -59,6 +66,7 @@ export interface VendorEarningsOrderItem {
   quantity: number;
   price: string;
   subtotal: string;
+  vendorDiscount: string;
 }
 
 export interface VendorEarningsOrder {
@@ -69,6 +77,8 @@ export interface VendorEarningsOrder {
   createdAt: string;
   payable: boolean;
   vendorSubtotal: string;
+  vendorDiscount: string;
+  vendorNet: string;
   items: VendorEarningsOrderItem[];
 }
 

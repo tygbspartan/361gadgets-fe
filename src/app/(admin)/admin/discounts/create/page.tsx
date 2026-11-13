@@ -24,6 +24,11 @@ import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { useToastHelpers } from "@/components/ui/ToastStack";
+import DiscountProductPicker, {
+  type PickedProduct,
+} from "@/components/admin/DiscountProductPicker";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
 
 export default function CreateDiscountPage() {
   const router = useRouter();
@@ -41,6 +46,9 @@ export default function CreateDiscountPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [oncePerUser, setOncePerUser] = useState(false);
+  const [products, setProducts] = useState<PickedProduct[]>([]);
+  const role = useAppSelector((state) => state.auth.user?.role);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
@@ -113,9 +121,12 @@ export default function CreateDiscountPage() {
           ? parseFloat(maxDiscountAmount)
           : undefined,
         usageLimit: usageLimit ? parseInt(usageLimit) : undefined,
-        startDate,
-        endDate,
+        // datetime-local is the admin's local time; send an exact instant.
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
         isActive,
+        oncePerUser,
+        productIds: products.length ? products.map((p) => p.id) : undefined,
       }).unwrap();
 
       toastSuccess("Discount created successfully!");
@@ -370,12 +381,29 @@ export default function CreateDiscountPage() {
           </CardContent>
         </Card>
 
+        {/* Products (optional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Products</CardTitle>
+            <CardDescription>
+              Optional: limit this code to specific products
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DiscountProductPicker
+              value={products}
+              onChange={setProducts}
+              isPlatform={isSuper(role)}
+            />
+          </CardContent>
+        </Card>
+
         {/* Status */}
         <Card>
           <CardHeader>
             <CardTitle>Status</CardTitle>
             <CardDescription>
-              Control the availability of this discount
+              Availability and who can use this discount
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -401,6 +429,34 @@ export default function CreateDiscountPage() {
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                     isActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-4 border-t pt-5">
+              <div>
+                <Label htmlFor="oncePerUser" className="text-base font-medium">
+                  Once per customer
+                </Label>
+                <p className="text-sm text-gray-500 mt-1">
+                  {oncePerUser
+                    ? "Each customer can use this code only once. Customers must be logged in to use it."
+                    : "Customers can use this code on any number of orders."}
+                </p>
+              </div>
+              <button
+                type="button"
+                id="oncePerUser"
+                role="switch"
+                aria-checked={oncePerUser}
+                onClick={() => setOncePerUser(!oncePerUser)}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                  oncePerUser ? "bg-blue-600" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    oncePerUser ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
               </button>

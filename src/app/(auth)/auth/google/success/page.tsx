@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/lib/redux/features/auth/authSlice";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,21 +10,49 @@ import { ROUTES } from "@/constants/routes";
 import { isPrivileged } from "@/constants/roles";
 import { useState } from "react";
 
+// Error codes the backend puts in the fragment (#error=...).
+const ERROR_MESSAGES: Record<string, string> = {
+  google_failed: "Google sign-in was cancelled or failed. Please try again.",
+  account_disabled: "This account has been deactivated. Please contact support.",
+};
+
+/*
+ * The backend sends the browser here with the outcome in the URL fragment:
+ * #token=... or #error=... (the fragment is never sent to a server, so the
+ * token stays out of logs). We read it once, then wipe it from the address bar
+ * and history straight away.
+ */
+function readGoogleResult() {
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  // ?token= is the old format, still accepted so a deploy where the backend
+  // goes out before the frontend (or the reverse) doesn't break sign-in.
+  const query = new URLSearchParams(window.location.search);
+  const token = fragment.get("token") ?? query.get("token");
+  const error = fragment.get("error");
+  window.history.replaceState(null, "", window.location.pathname);
+  return { token, error };
+}
+
 function GoogleSuccessContent() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  // The URL is wiped on the first read, so this must only run once (React's
+  // dev mode runs effects twice).
+  const started = useRef(false);
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    if (started.current) return;
+    started.current = true;
 
-    console.log("Google OAuth callback - Token:", token);
+    const { token, error: errorCode } = readGoogleResult();
 
     if (!token) {
-      console.error("No token found in URL");
-      setError("No authentication token received");
-      setTimeout(() => router.push(ROUTES.LOGIN), 2000);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off read of the URL on arrival
+      setError(
+        (errorCode && ERROR_MESSAGES[errorCode]) || "No authentication token received",
+      );
+      setTimeout(() => router.push(ROUTES.LOGIN), 3000);
       return;
     }
 
@@ -33,8 +61,6 @@ function GoogleSuccessContent() {
       try {
         // Save token to localStorage first
         localStorage.setItem("token", token);
-
-        console.log("Token saved to localStorage, fetching user data...");
 
         // Fetch user data using the token
         const response = await fetch(
@@ -46,22 +72,17 @@ function GoogleSuccessContent() {
           },
         );
 
-        console.log("Response status:", response.status);
-
         if (!response.ok) {
           const errorData = await response
             .json()
             .catch(() => ({ message: "Unknown error" }));
-          console.error("API Error:", errorData);
           throw new Error(errorData.message || "Failed to fetch user data");
         }
 
         const userData = await response.json();
-        console.log("User data received:", userData);
 
         // Check if we have the expected data structure
         if (!userData.data) {
-          console.error("Invalid response structure:", userData);
           throw new Error("Invalid user data received");
         }
 
@@ -73,8 +94,6 @@ function GoogleSuccessContent() {
           }),
         );
 
-        console.log("User authenticated successfully, redirecting...");
-
         // Redirect based on role — vendors AND superadmin reach the admin panel.
         if (isPrivileged(userData.data.role)) {
           router.push(ROUTES.ADMIN_DASHBOARD);
@@ -82,7 +101,6 @@ function GoogleSuccessContent() {
           router.push(ROUTES.HOME);
         }
       } catch (error: any) {
-        console.error("Failed to authenticate with Google:", error);
         setError(error.message || "Authentication failed");
         localStorage.removeItem("token");
         setTimeout(() => router.push(ROUTES.LOGIN), 3000);
@@ -90,7 +108,7 @@ function GoogleSuccessContent() {
     };
 
     handleGoogleAuth();
-  }, [searchParams, router, dispatch]);
+  }, [router, dispatch]);
 
   if (error) {
     return (

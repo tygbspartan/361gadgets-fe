@@ -25,3 +25,18 @@ export const BRAND = {
     markOnDark: "/logos/logoPrimaryWhite.png",
   },
 } as const;
+
+/* Store contact details, shown in the Footer and on the order confirmation. */
+export const CONTACT = {
+  address: "Kalopul, Kathmandu",
+  phone: { label: "+977 976-8988420", tel: "+9779768988420" },
+  email: "361gadgets.np@gmail.com",
+} as const;
+
+/* Official social profiles: the Footer icons and the Organization schema
+   (sameAs), so Google can tie them to the store. */
+export const SOCIAL_LINKS = [
+  { label: "Instagram", href: "https://www.instagram.com/361gadgets_np/", icon: "mdi:instagram" },
+  { label: "TikTok", href: "https://www.tiktok.com/@361gadgets.np", icon: "ic:baseline-tiktok" },
+  { label: "Facebook", href: "https://www.facebook.com/np.361gadgets", icon: "mdi:facebook" },
+] as const;

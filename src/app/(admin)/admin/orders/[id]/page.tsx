@@ -44,6 +44,13 @@ import { useAppSelector } from "@/lib/redux/hooks";
 import { isSuper } from "@/constants/roles";
 import { useToastHelpers } from "@/components/ui/ToastStack";
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "Cash on delivery",
+  esewa: "eSewa QR",
+  khalti: "Khalti",
+  bank_transfer: "Bank transfer",
+};
+
 export default function OrderDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -196,17 +203,17 @@ export default function OrderDetailsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2 sm:gap-4">
           <Link href={ROUTES.ADMIN_ORDERS}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Order Details</h1>
-            <p className="text-gray-600 mt-1">{order.orderNumber}</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold sm:text-3xl">Order Details</h1>
+            <p className="text-gray-600 mt-1 break-all">{order.orderNumber}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -236,10 +243,10 @@ export default function OrderDetailsPage() {
                 {order.items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex gap-4 p-4 border rounded-lg"
+                    className="flex gap-3 p-3 border rounded-lg sm:gap-4 sm:p-4"
                   >
                     {/* Product Image */}
-                    <div className="relative w-20 h-20 shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="relative w-16 h-16 shrink-0 bg-gray-100 rounded-lg overflow-hidden sm:w-20 sm:h-20">
                       {item.productImage ? (
                         <Image
                           src={item.productImage}
@@ -255,26 +262,26 @@ export default function OrderDetailsPage() {
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-semibold">{item.productName}</h3>
                       {item.productSku && (
                         <p className="text-sm text-gray-500">
                           SKU: {item.productSku}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-sm text-gray-600">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 sm:gap-x-4">
+                        <span className="text-sm text-gray-600 whitespace-nowrap">
                           Qty: {item.quantity}
                         </span>
                         <span className="text-sm text-gray-600">×</span>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 whitespace-nowrap">
                           {formatCurrency(item.price)}
                         </span>
                       </div>
                     </div>
 
                     {/* Subtotal */}
-                    <div className="text-right">
+                    <div className="shrink-0 text-right whitespace-nowrap">
                       <p className="font-semibold">
                         {formatCurrency(item.subtotal)}
                       </p>
@@ -322,145 +329,187 @@ export default function OrderDetailsPage() {
                 </div>
               ) : (
                 <div className="mt-6 pt-6 border-t space-y-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Your items total:</span>
+                  {parseFloat(order.vendorDiscount ?? "0") > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Your items:</span>
+                        <span className="font-medium">
+                          {formatCurrency(order.vendorSubtotal ?? "0")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Your discount code:</span>
+                        <span className="font-medium">
+                          -{formatCurrency(order.vendorDiscount ?? "0")}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                    <span>Your share:</span>
                     <span>
-                      {formatCurrency(order.vendorSubtotal ?? order.subtotal)}
+                      {formatCurrency(order.vendorNet ?? order.vendorSubtotal ?? order.subtotal)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Shipping, discounts and the order total are managed by the
-                    platform.
+                    Shipping, platform discounts and the order total are handled
+                    by 361 Gadgets.
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Customer Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Customer Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-gray-600">Name</Label>
-                <p className="font-medium">{order.shippingFullName}</p>
-              </div>
-              <div>
-                <Label className="text-gray-600">Email</Label>
-                <p className="font-medium">{order.shippingEmail}</p>
-              </div>
-              <div>
-                <Label className="text-gray-600">Phone</Label>
-                <p className="font-medium">{order.shippingPhone}</p>
-              </div>
-              {order.user && (
-                <div className="pt-4 border-t">
-                  <Label className="text-gray-600">Account</Label>
-                  <p className="font-medium">
-                    {order.user.firstName} {order.user.lastName}
-                  </p>
-                  <p className="text-sm text-gray-500">{order.user.email}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Shipping Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Shipping Address
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <p className="font-medium">{order.shippingFullName}</p>
-                <p className="text-gray-600">{order.shippingAddressLine1}</p>
-                {order.shippingAddressLine2 && (
-                  <p className="text-gray-600">{order.shippingAddressLine2}</p>
-                )}
-                {order.shippingLandmark && (
-                  <p className="text-gray-600">
-                    Landmark: {order.shippingLandmark}
-                  </p>
-                )}
-                <p className="text-gray-600">
-                  {order.shippingCity}
-                  {order.shippingProvince && `, ${order.shippingProvince}`}{" "}
-                  {order.shippingPostalCode}
-                </p>
-                <p className="text-gray-600">{order.shippingCountry}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {order.customerNote && (
-                <div>
-                  <Label className="text-gray-600">Customer Note</Label>
-                  <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
-                    {order.customerNote}
-                  </p>
-                </div>
-              )}
-              {canManage ? (
-                <div>
-                  <Label htmlFor="adminNote">Admin Note</Label>
-                  <Textarea
-                    id="adminNote"
-                    value={adminNote}
-                    onChange={(e) => setAdminNote(e.target.value)}
-                    placeholder="Add notes for internal reference..."
-                    rows={4}
-                    className="mt-1"
-                  />
-                  <Button
-                    onClick={handleSaveAdminNote}
-                    disabled={
-                      isUpdatingStatus || adminNote === (order.adminNote || "")
-                    }
-                    className="mt-2"
-                    variant="outline"
-                  >
-                    {isUpdatingStatus ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Save Admin Note
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                order.adminNote && (
+          {/* Customer contact, address and notes are superadmin-only: the
+              platform delivers, so a vendor only sees the delivery area (the
+              server doesn't send them the rest). */}
+          {canManage ? (
+            <>
+              {/* Customer Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Customer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-gray-600">Admin Note</Label>
-                    <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
-                      {order.adminNote}
-                    </p>
+                    <Label className="text-gray-600">Name</Label>
+                    <p className="font-medium">{order.shippingFullName}</p>
                   </div>
-                )
-              )}
-            </CardContent>
-          </Card>
+                  <div>
+                    <Label className="text-gray-600">Email</Label>
+                    <p className="font-medium">{order.shippingEmail}</p>
+                  </div>
+                  <div>
+                    <Label className="text-gray-600">Phone</Label>
+                    <p className="font-medium">{order.shippingPhone}</p>
+                  </div>
+                  {order.user && (
+                    <div className="pt-4 border-t">
+                      <Label className="text-gray-600">Account</Label>
+                      <p className="font-medium">
+                        {order.user.firstName} {order.user.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">{order.user.email}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Shipping Address */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Shipping Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    <p className="font-medium">{order.shippingFullName}</p>
+                    <p className="text-gray-600">{order.shippingAddressLine1}</p>
+                    {order.shippingAddressLine2 && (
+                      <p className="text-gray-600">{order.shippingAddressLine2}</p>
+                    )}
+                    {order.shippingLandmark && (
+                      <p className="text-gray-600">
+                        Landmark: {order.shippingLandmark}
+                      </p>
+                    )}
+                    <p className="text-gray-600">
+                      {order.shippingCity}
+                      {order.shippingProvince && `, ${order.shippingProvince}`}{" "}
+                      {order.shippingPostalCode}
+                    </p>
+                    <p className="text-gray-600">{order.shippingCountry}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {order.customerNote && (
+                    <div>
+                      <Label className="text-gray-600">Customer Note</Label>
+                      <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
+                        {order.customerNote}
+                      </p>
+                    </div>
+                  )}
+                  {canManage ? (
+                    <div>
+                      <Label htmlFor="adminNote">Admin Note</Label>
+                      <Textarea
+                        id="adminNote"
+                        value={adminNote}
+                        onChange={(e) => setAdminNote(e.target.value)}
+                        placeholder="Add notes for internal reference..."
+                        rows={4}
+                        className="mt-1"
+                      />
+                      <Button
+                        onClick={handleSaveAdminNote}
+                        disabled={
+                          isUpdatingStatus || adminNote === (order.adminNote || "")
+                        }
+                        className="mt-2"
+                        variant="outline"
+                      >
+                        {isUpdatingStatus ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Save Admin Note
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    order.adminNote && (
+                      <div>
+                        <Label className="text-gray-600">Admin Note</Label>
+                        <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
+                          {order.adminNote}
+                        </p>
+                      </div>
+                    )
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Delivery
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <p className="font-medium">
+                  {order.shippingCity}
+                  {order.shippingProvince && `, ${order.shippingProvince}`}
+                </p>
+                <p className="text-sm text-gray-500">
+                  361 Gadgets delivers this order. Customer contact details are
+                  kept private.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Status & Actions */}
@@ -540,8 +589,8 @@ export default function OrderDetailsPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label className="text-gray-600">Payment Method</Label>
-                <p className="font-medium mt-1 capitalize">
-                  {order.paymentMethod.replace("_", " ")}
+                <p className="font-medium mt-1">
+                  {PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}
                 </p>
               </div>
               {order.transactionNumber && (

@@ -1,11 +1,18 @@
-export const KATHMANDU_VALLEY_CITIES = [
-  "kathmandu",
-  "lalitpur",
-  "bhaktapur",
-  "kirtipur",
-  "madhyapur thimi",
-  "thimi",
-];
+/*
+ * Address rules. The server enforces the same ones (361-be
+ * src/constants/nepal.constants.ts); change both together.
+ */
+
+// Districts that get the inside-valley shipping rate.
+export const VALLEY_DISTRICTS = ["Kathmandu", "Lalitpur", "Bhaktapur"];
+
+// Nepali mobile: 10 digits starting with 97 or 98. Spaces, dashes and a
+// +977 / 977 prefix are allowed in the input and stripped by the server.
+export const normalizeNepalPhone = (value: string) =>
+  value.replace(/[\s\-()]/g, "").replace(/^\+?977/, "");
+export const NEPAL_MOBILE_REGEX = /^9[78]\d{8}$/;
+
+export const NEPAL_POSTAL_REGEX = /^\d{5}$/;
 
 export const NEPAL_PROVINCES = [
   "Koshi Province",
@@ -107,7 +114,7 @@ export const SHIPPING_COSTS = {
 
 export const PAYMENT_METHODS = {
   COD: "cod",
-  QR: "qr",
+  QR: "esewa", // eSewa QR; the server has no separate "qr" method
 } as const;
 
 export const ESEWA_QR_CODE = "/qr.jpg";

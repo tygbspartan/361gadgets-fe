@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SITE_URL, buildBreadcrumbJsonLd, buildCollectionPageJsonLd } from "@/lib/seo/jsonld";
+import {
+  SITE_URL,
+  buildBreadcrumbJsonLd,
+  buildCollectionPageJsonLd,
+  toPlainText,
+  truncate,
+} from "@/lib/seo/jsonld";
+import JsonLd from "@/components/seo/JsonLd";
+import SeoContent from "@/components/seo/SeoContent";
+import FaqSection from "@/components/seo/FaqSection";
 import {
   getCategoryBySlug,
   getProductsPage,
@@ -38,7 +47,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   const category = await getCategoryBySlug(slug);
-  if (!category) return {};
+  // Missing: the page calls notFound(); title the 404 to match.
+  if (!category) return { title: "Page not found", robots: { index: false } };
 
   const cleanPath = `/category/${slug}`;
   const pageNum = Math.max(1, Number(str(sp.page)) || 1);
@@ -47,12 +57,15 @@ export async function generateMetadata({
   );
 
   const description =
-    category.seoDescription?.trim().slice(0, 160) ||
+    truncate(toPlainText(category.seoDescription)) ||
     `Shop ${category.name} online in Nepal at 361 Gadgets — genuine tech, best prices, fast delivery across the country.`;
+  const title = `${category.name} — Price in Nepal | 361 Gadgets`;
 
   return {
-    title: { absolute: `${category.name} — Price in Nepal | 361 Gadgets` },
+    title: { absolute: title },
     description,
+    openGraph: { title, description, url: cleanPath, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
     // Filter/sort variants are noindex,follow and canonical to the clean URL;
     // clean pagination is indexable with a self-referencing canonical.
     robots: hasFilterOrSort ? { index: false, follow: true } : undefined,
@@ -99,6 +112,11 @@ export default async function CategoryPage({
 
   const chain = chainOf(category);
   const cleanPath = `/category/${slug}`;
+  // The long copy and FAQ go on the canonical first page only, so paginated and
+  // filtered variants don't repeat them.
+  const showSeoContent =
+    page === 1 &&
+    !Object.keys(sp).some((k) => k !== "page" && sp[k] !== undefined && sp[k] !== "");
 
   // Pagination hrefs preserve every active filter/sort, swapping only the page.
   const hrefForPage = (n: number) => {
@@ -128,8 +146,8 @@ export default async function CategoryPage({
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <JsonLd data={collectionJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <CollectionView
         title={category.name}
         intro={category.seoDescription}
@@ -138,6 +156,14 @@ export default async function CategoryPage({
         totalPages={pagination.totalPages}
         hrefForPage={hrefForPage}
         brands={brands}
+        footer={
+          showSeoContent && (category.seoContent?.trim() || category.faqs?.length) ? (
+            <>
+              <SeoContent content={category.seoContent} />
+              <FaqSection faqs={category.faqs} title={`${category.name}: frequently asked questions`} />
+            </>
+          ) : null
+        }
       />
     </>
   );

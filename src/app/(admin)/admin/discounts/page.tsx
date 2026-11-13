@@ -297,6 +297,11 @@ export default function DiscountsPage() {
                               <span className="text-gray-500"> / ∞</span>
                             )}
                           </div>
+                          {discount.oncePerUser && (
+                            <p className="mt-0.5 whitespace-nowrap text-xs text-gray-500">
+                              1 per customer
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

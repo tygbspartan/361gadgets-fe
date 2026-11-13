@@ -70,7 +70,7 @@ function FeaturedCard({ product, index }: { product: Product; index: number }) {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row w-full h-auto lg:h-218.75">
+    <div className="flex flex-col lg:flex-row w-full h-auto lg:h-180">
       {isImageLeft ? (
         <>{ImageBlock}{DetailsBlock}</>
       ) : (
@@ -88,7 +88,7 @@ export default function HomepageFeatured() {
   });
 
   if (isLoading) return (
-    <div className="w-full bg-gray-50 flex items-center justify-center h-218.75">
+    <div className="w-full bg-gray-50 flex items-center justify-center h-180">
       <div className="w-8 h-8 border-2 border-black/10 border-t-primary rounded-full animate-spin" />
     </div>
   );

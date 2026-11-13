@@ -1,48 +1,17 @@
-"use client";
+import type { Metadata } from "next";
+import { publicPage } from "@/lib/seo/metadata";
+import HomePageContent from "@/components/home/HomePageContent";
 
-import HeroSection from "@/components/home/HeroSection";
-import BrandsCarousel from "@/components/home/BrandCarousel";
-import NewArrivals from "@/components/home/NewArrivals";
-import FeaturedProducts from "@/components/home/FeaturedProducts";
-import SpecialOffers from "@/components/home/SpecialOffers";
-import ShopByCategory from "@/components/home/ShopByCategory";
-import HomepageFeatured from "@/components/home/HomepageFeatured";
+// The homepage sections are client components; this server wrapper exists so
+// the page can declare its own metadata (canonical URL, share card).
+export const metadata: Metadata = publicPage({
+  title: "361 Gadgets | Genuine Tech & Gadgets in Nepal",
+  absoluteTitle: true,
+  description:
+    "Shop genuine gadgets and tech online in Nepal: phones, earbuds, laptops, gaming gear, smart devices and accessories from trusted brands, delivered to your door.",
+  path: "/",
+});
 
 export default function HomePage() {
-  return (
-    <div>
-      {/* Hero — full width, pull up to cancel Navbar's mb-12.5 */}
-      <div className="-mt-12.5">
-        <HeroSection />
-      </div>
-
-      {/* Brand marquee — full width, flush under the hero */}
-      <BrandsCarousel />
-
-      {/* New Arrivals — 50px below brands */}
-      <div className="page-wrapper mt-12.5">
-        <NewArrivals limit={5} />
-      </div>
-
-      {/* Best Sellers — 50px below new arrivals */}
-      <div className="page-wrapper mt-12.5">
-        <FeaturedProducts />
-      </div>
-
-      {/* Special Offers — 50px below best sellers */}
-      <div className="page-wrapper mt-12.5">
-        <SpecialOffers limit={5} />
-      </div>
-
-      {/* Homepage Featured */}
-      <div>
-        <HomepageFeatured />
-      </div>
-
-      {/* Shop by Category — 50px below homepage featured */}
-      <div className="page-wrapper mt-12.5">
-        <ShopByCategory />
-      </div>
-    </div>
-  );
+  return <HomePageContent />;
 }

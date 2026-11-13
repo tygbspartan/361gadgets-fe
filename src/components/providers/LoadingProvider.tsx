@@ -16,8 +16,9 @@ const MIN_STEP = 0.006;
  *  work is actually finished — it must never show 100 early. */
 const LEAD = 0.1;
 const CEILING = 0.9;
-/** Beat at 100% so the completed bar is legible before the hand-off. */
-const HOLD_MS = 260;
+/** Beat at 100% so the completed bar is legible before the hand-off. Matches
+ *  the bar's width transition in PageLoader. */
+const HOLD_MS = 200;
 
 /** False while the PageLoader overlay is covering the page, so entrance
  *  animations (the homepage hero's boot) can wait until they'd be seen.
@@ -49,12 +50,18 @@ export default function LoadingProvider({
    * it honest: it cannot reach 100 until the work genuinely has.
    */
   useEffect(() => {
-    const ceiling = target >= 1 ? 1 : Math.min(target + LEAD, CEILING);
+    // Once the work is done, jump to 100 rather than easing there: the ease
+    // alone used to add ~1.6s before the hero could start. The bar's CSS
+    // transition still animates the last stretch.
+    const done = target >= 1;
+    const ceiling = done ? 1 : Math.min(target + LEAD, CEILING);
     const id = setInterval(() => {
       setShown((prev) =>
         prev >= ceiling
           ? prev
-          : Math.min(prev + Math.max((ceiling - prev) * EASE, MIN_STEP), ceiling),
+          : done
+            ? 1
+            : Math.min(prev + Math.max((ceiling - prev) * EASE, MIN_STEP), ceiling),
       );
     }, TICK_MS);
     return () => clearInterval(id);

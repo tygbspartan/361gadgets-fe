@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
-import { getProductBySlug, getProductReviews, getRelatedProducts } from "@/lib/server/catalog";
-import { buildProductJsonLd, buildBreadcrumbJsonLd, SITE_URL } from "@/lib/seo/jsonld";
+import {
+  getProductBySlug,
+  getProductReviews,
+  getRelatedProducts,
+  getShippingRates,
+} from "@/lib/server/catalog";
+import {
+  buildProductJsonLd,
+  buildBreadcrumbJsonLd,
+  buildProductDescription,
+  SITE_URL,
+} from "@/lib/seo/jsonld";
+import JsonLd from "@/components/seo/JsonLd";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo/metadata";
+import FaqSection from "@/components/seo/FaqSection";
 import ProductDetails from "@/components/productDetailPage/ProductDetails";
 import ProductSpecifications from "@/components/productDetailPage/ProductSpecifications";
 import SimilarProducts from "@/components/productDetailPage/SimilarProducts";
@@ -17,13 +30,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return {};
+  // Missing: the page calls notFound(); title the 404 to match.
+  if (!product) return { title: "Page not found", robots: { index: false } };
 
   const title = product.metaTitle?.trim() || product.name;
-  const description =
-    product.metaDescription?.trim() ||
-    product.longDescription?.trim() ||
-    `Buy ${product.name} online at 361 Gadgets — genuine tech, delivered across Nepal.`;
+  const description = buildProductDescription(product);
   const primaryImage =
     product.images?.find((i) => i.isPrimary)?.imageUrl ?? product.images?.[0]?.imageUrl;
 
@@ -36,13 +47,13 @@ export async function generateMetadata({
       description,
       url: `/product/${slug}`,
       type: "website",
-      images: primaryImage ? [{ url: primaryImage }] : undefined,
+      images: primaryImage ? [{ url: primaryImage, alt: product.name }] : [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: primaryImage ? [primaryImage] : undefined,
+      images: [primaryImage ?? DEFAULT_OG_IMAGE.url],
     },
   };
 }
@@ -68,13 +79,14 @@ export default async function ProductDetailPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [reviewData, related] = await Promise.all([
+  const [reviewData, related, shipping] = await Promise.all([
     getProductReviews(product.id),
     getRelatedProducts(
       product.categoryId ?? null,
       (product.category as unknown as { parentId?: number | null })?.parentId ?? null,
       product.id
     ),
+    getShippingRates(),
   ]);
 
   const { reviews, summary } = reviewData;
@@ -87,6 +99,7 @@ export default async function ProductDetailPage({
     url: productUrl,
     averageRating: summary.averageRating,
     reviewCount: summary.totalReviews,
+    shipping,
   });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Home", url: SITE_URL },
@@ -99,18 +112,15 @@ export default async function ProductDetailPage({
 
   return (
     <div className="page-wrapper space-y-12.5">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <JsonLd data={productJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
 
       <ProductDetails product={product} summary={summary} />
 
       <ProductSpecifications product={product} />
+
+      {/* Optional, set per product in the admin. */}
+      <FaqSection faqs={product.faqs} />
 
       <SimilarProducts products={related} />
 

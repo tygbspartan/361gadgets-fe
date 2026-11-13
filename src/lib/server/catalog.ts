@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { serverApiBase } from "@/lib/serverApi";
-import type { Product } from "@/types/product.types";
+import type { Faq, Product } from "@/types/product.types";
+import { DEFAULT_SHIPPING, type ShippingRates } from "@/lib/seo/jsonld";
 import type { ProductReviewsResponse } from "@/types/review.types";
 
 export type ProductReviewsData = ProductReviewsResponse["data"];
@@ -58,6 +59,8 @@ export interface CategoryDetail {
   slug: string;
   description: string | null;
   seoDescription: string | null;
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
   level: number;
   parentId: number | null;
   parent?: { name: string; slug: string; parent?: CategoryDetail["parent"] } | null;
@@ -187,16 +190,26 @@ export const getAllBrandSlugs = () =>
    first page reports totalPages; the rest are fetched in parallel. */
 const SITEMAP_PAGE_SIZE = 100;
 
-export async function getAllProductSlugs(): Promise<{ slug: string; updatedAt?: string }[]> {
+export async function getAllProductSlugs(): Promise<
+  { slug: string; updatedAt?: string; images?: string[] }[]
+> {
   type SlugsPage = {
     data?: {
-      data?: { slug?: string; updatedAt?: string }[];
+      data?: { slug?: string; updatedAt?: string; images?: { imageUrl?: string }[] }[];
       pagination?: { totalPages?: number };
     };
   };
   const toSlugs = (j: SlugsPage) =>
     (j?.data?.data ?? []).flatMap((p) =>
-      p?.slug ? [{ slug: p.slug, updatedAt: p.updatedAt }] : []
+      p?.slug
+        ? [
+            {
+              slug: p.slug,
+              updatedAt: p.updatedAt,
+              images: (p.images ?? []).flatMap((i) => (i?.imageUrl ? [i.imageUrl] : [])).slice(0, 5),
+            },
+          ]
+        : []
     );
   const pagePath = (page: number) =>
     `/products?limit=${SITEMAP_PAGE_SIZE}&page=${page}&isActive=true`;
@@ -250,3 +263,48 @@ export const getRelatedProducts = cache(
     return related;
   }
 );
+
+/* Active top-level categories, for quick links (e.g. the 404 page).
+   Empty on any failure so the caller can simply omit the section. */
+export async function getTopCategories(limit = 6): Promise<{ name: string; slug: string }[]> {
+  try {
+    const base = await serverApiBase();
+    const res = await fetch(`${base}/categories`, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    type CategoryRow = {
+      name: string;
+      slug?: string;
+      parentId: number | null;
+      isActive?: boolean;
+      displayOrder?: number;
+    };
+    const rows: CategoryRow[] = json?.data ?? [];
+    return rows
+      .filter((c) => c.slug && c.parentId == null && c.isActive !== false)
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+      .slice(0, limit)
+      .map((c) => ({ name: c.name, slug: c.slug as string }));
+  } catch {
+    return [];
+  }
+}
+
+// Live delivery rates from the public Settings, for the product schema. Falls
+// back to the defaults if the API is unreachable.
+export const getShippingRates = cache(async (): Promise<ShippingRates> => {
+  try {
+    const base = await serverApiBase();
+    const res = await fetch(`${base}/settings/public`, { next: { revalidate: 3600 } });
+    if (!res.ok) return DEFAULT_SHIPPING;
+    const d = (await res.json())?.data ?? {};
+    const num = (v: unknown, fallback: number) => (Number.isFinite(Number(v)) && v !== null ? Number(v) : fallback);
+    return {
+      insideValley: num(d.shippingInsideValley, DEFAULT_SHIPPING.insideValley),
+      outsideValley: num(d.shippingOutsideValley, DEFAULT_SHIPPING.outsideValley),
+      freeOver: num(d.freeShippingThreshold, DEFAULT_SHIPPING.freeOver),
+    };
+  } catch {
+    return DEFAULT_SHIPPING;
+  }
+});

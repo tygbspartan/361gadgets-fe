@@ -3,10 +3,13 @@
 import { useSelector } from "react-redux";
 import { Icon } from "@iconify/react";
 import { RootState } from "@/lib/redux/store";
+import { useGetMeQuery } from "@/lib/redux/features/auth/authApi";
 import ProfileNavMobile from "@/components/profile/ProfileNavMobile";
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+function formatDate(dateStr: string | undefined) {
+  const date = dateStr ? new Date(dateStr) : null;
+  if (!date || Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -68,6 +71,9 @@ function InfoCard({
 
 export default function ProfileSettingsPage() {
   const { user } = useSelector((state: RootState) => state.auth);
+  // The signed-in user saved at login may predate createdAt being part of the
+  // login response, so the join date comes from the server's current record.
+  const { data: me } = useGetMeQuery(undefined, { skip: !user });
 
   if (!user) return null;
 
@@ -106,7 +112,7 @@ export default function ProfileSettingsPage() {
           <InfoCard
             icon="hugeicons:calendar-01"
             label="Member Since"
-            value={formatDate(user.createdAt)}
+            value={formatDate(me?.data?.createdAt ?? user.createdAt)}
           />
           <InfoCard
             icon="hugeicons:user-02"

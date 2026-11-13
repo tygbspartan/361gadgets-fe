@@ -27,15 +27,31 @@ import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { useToastHelpers } from "@/components/ui/ToastStack";
+import DiscountProductPicker, {
+  type PickedProduct,
+} from "@/components/admin/DiscountProductPicker";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { isSuper } from "@/constants/roles";
+
+// An ISO date as the value for a datetime-local input, in the admin's own
+// timezone (toISOString would show UTC and shift the time on every save).
+function toDateTimeLocal(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
 
 export default function EditDiscountPage() {
   const params = useParams();
   const router = useRouter();
-  const discountId = parseInt(params.id as string);
+  const discountId = Number(params.id);
+  // Bad id in the URL: skip the request and show "not found".
+  const validId = Number.isInteger(discountId) && discountId > 0;
   const { toastSuccess, toastError } = useToastHelpers();
 
   const { data: discount, isLoading: isLoadingDiscount } =
-    useGetDiscountQuery(discountId);
+    useGetDiscountQuery(discountId, { skip: !validId });
   const [updateDiscount, { isLoading: isUpdating }] =
     useUpdateDiscountMutation();
 
@@ -50,12 +66,10 @@ export default function EditDiscountPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isActive, setIsActive] = useState<boolean>(true);
+  const [oncePerUser, setOncePerUser] = useState(false);
+  const [products, setProducts] = useState<PickedProduct[]>([]);
+  const role = useAppSelector((state) => state.auth.user?.role);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    console.log(type, ": type");
-    console.log(discount);
-  }, [type]);
 
   // Pre-fill form when discount data loads
   useEffect(() => {
@@ -81,35 +95,21 @@ export default function EditDiscountPage() {
         discount.usageLimit != null ? String(discount.usageLimit) : "",
       );
 
-      if (discount.startDate) {
-        try {
-          const startDateObj = new Date(discount.startDate);
-          if (!isNaN(startDateObj.getTime())) {
-            setStartDate(startDateObj.toISOString().slice(0, 16));
-          }
-        } catch (e) {
-          console.error("Invalid start date:", e);
-        }
-      }
-
-      if (discount.endDate) {
-        try {
-          const endDateObj = new Date(discount.endDate);
-          if (!isNaN(endDateObj.getTime())) {
-            setEndDate(endDateObj.toISOString().slice(0, 16));
-          }
-        } catch (e) {
-          console.error("Invalid end date:", e);
-        }
-      }
-
+      setStartDate(toDateTimeLocal(discount.startDate));
+      setEndDate(toDateTimeLocal(discount.endDate));
       setIsActive(discount.isActive ?? true);
+      setOncePerUser(discount.oncePerUser ?? false);
+      setProducts(
+        (discount.products ?? []).map((link) => ({
+          id: link.product.id,
+          name: link.product.name,
+        })),
+      );
     }
   }, [discount, name]);
 
   const handleValueChange = (value: string) => {
     if (value == "") return;
-    console.log("here");
     setType(value as "percentage" | "fixed");
   };
 
@@ -174,16 +174,21 @@ export default function EditDiscountPage() {
           code: code.trim() ? code.toUpperCase() : undefined,
           type,
           value: parseFloat(value),
+          // An emptied field sends null, which clears the limit on the server
+          // (undefined would leave the old value in place).
           minPurchaseAmount: minPurchaseAmount
             ? parseFloat(minPurchaseAmount)
-            : undefined,
+            : null,
           maxDiscountAmount: maxDiscountAmount
             ? parseFloat(maxDiscountAmount)
-            : undefined,
-          usageLimit: usageLimit ? parseInt(usageLimit) : undefined,
-          startDate,
-          endDate,
+            : null,
+          usageLimit: usageLimit ? parseInt(usageLimit) : null,
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
           isActive,
+          oncePerUser,
+          // Always sent: replaces the links (an empty list removes them).
+          productIds: products.map((p) => p.id),
         },
       }).unwrap();
 
@@ -463,12 +468,29 @@ export default function EditDiscountPage() {
           </CardContent>
         </Card>
 
+        {/* Products (optional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Products</CardTitle>
+            <CardDescription>
+              Optional: limit this code to specific products
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DiscountProductPicker
+              value={products}
+              onChange={setProducts}
+              isPlatform={isSuper(role)}
+            />
+          </CardContent>
+        </Card>
+
         {/* Status */}
         <Card>
           <CardHeader>
             <CardTitle>Status</CardTitle>
             <CardDescription>
-              Control the availability of this discount
+              Availability and who can use this discount
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -494,6 +516,34 @@ export default function EditDiscountPage() {
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                     isActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-4 border-t pt-5">
+              <div>
+                <Label htmlFor="oncePerUser" className="text-base font-medium">
+                  Once per customer
+                </Label>
+                <p className="text-sm text-gray-500 mt-1">
+                  {oncePerUser
+                    ? "Each customer can use this code only once. Customers must be logged in to use it."
+                    : "Customers can use this code on any number of orders."}
+                </p>
+              </div>
+              <button
+                type="button"
+                id="oncePerUser"
+                role="switch"
+                aria-checked={oncePerUser}
+                onClick={() => setOncePerUser(!oncePerUser)}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                  oncePerUser ? "bg-blue-600" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    oncePerUser ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
               </button>

@@ -4,6 +4,8 @@ import "./globals.css";
 import { ReduxProvider } from "@/lib/redux/provider";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { BRAND } from "@/config/brand";
+import JsonLd from "@/components/seo/JsonLd";
+import { SITE_URL, buildSiteJsonLd } from "@/lib/seo/jsonld";
 import { HERO_BOOT_SCRIPT, SCROLL_TOP_ON_RELOAD_SCRIPT } from "@/components/home/heroCircuit";
 
 const poppins = Poppins({
@@ -30,7 +32,8 @@ const SITE_DESCRIPTION =
   "Shop genuine gadgets & tech online in Nepal — phones, accessories & more from trusted brands, delivered to your door.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.361gadgets.com"),
+  metadataBase: new URL(SITE_URL),
+  applicationName: "361 Gadgets",
   title: {
     default: SITE_TITLE,
     // Per-page titles (e.g. a product name) render as "Name | 361 Gadgets".
@@ -50,7 +53,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "361 Gadgets",
-    url: "https://www.361gadgets.com",
+    locale: "en_NP",
+    url: SITE_URL,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
@@ -75,18 +79,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: HERO_BOOT_SCRIPT }} />
       </head>
       <body className={`${poppins.className} ${inter.variable} ${montserrat.variable}`}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: BRAND.name,
-              url: "https://www.361gadgets.com",
-              logo: "https://www.361gadgets.com/logos/logoSecondaryBlack.png",
-            }),
-          }}
-        />
+        {/* Store + website, on every page (product/category pages add their own). */}
+        <JsonLd data={buildSiteJsonLd()} />
         <ReduxProvider>
           <ConfirmProvider>{children}</ConfirmProvider>
         </ReduxProvider>

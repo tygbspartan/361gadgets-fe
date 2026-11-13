@@ -14,6 +14,7 @@ interface AppliedDiscount {
   type: "percentage" | "fixed";
   value: number;
   discountAmount: number;
+  eligibleSubtotal?: number;
 }
 
 interface Props {
@@ -27,6 +28,8 @@ interface Props {
   discountCode: string;
   discountError: string;
   isValidatingDiscount: boolean;
+  // Seconds left before Apply can be used again (0 = no cooldown).
+  applyCooldown: number;
   isCheckingOut: boolean;
   onDiscountCodeChange: (val: string) => void;
   onApplyDiscount: () => void;
@@ -45,6 +48,7 @@ export default function OrderSummary({
   discountCode,
   discountError,
   isValidatingDiscount,
+  applyCooldown,
   isCheckingOut,
   onDiscountCodeChange,
   onApplyDiscount,
@@ -149,6 +153,12 @@ export default function OrderSummary({
                 {" · "}
                 You saved {fmt(appliedDiscount.discountAmount)}
               </p>
+              {appliedDiscount.eligibleSubtotal != null &&
+                appliedDiscount.eligibleSubtotal < subtotal && (
+                  <p className="text-xs text-green-700/80">
+                    Applies to some items in your cart only.
+                  </p>
+                )}
             </div>
             <button
               onClick={onRemoveDiscount}
@@ -168,12 +178,20 @@ export default function OrderSummary({
             />
             <button
               onClick={onApplyDiscount}
-              disabled={isValidatingDiscount || !discountCode.trim()}
-              data-cursor-disabled={isValidatingDiscount ? "Checking code…" : "Enter a code first"}
+              disabled={isValidatingDiscount || applyCooldown > 0 || !discountCode.trim()}
+              data-cursor-disabled={
+                isValidatingDiscount
+                  ? "Checking code…"
+                  : applyCooldown > 0
+                    ? `Try again in ${applyCooldown}s`
+                    : "Enter a code first"
+              }
               className="shrink-0 bg-primary text-primary-foreground font-inter font-medium text-[10px] lg:text-base leading-none lg:leading-6 uppercase rounded-[3px] h-6 lg:h-auto px-2 lg:px-2.5 py-0 lg:py-1.5 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-(--primary-hover) active:bg-(--primary-active) transition-colors"
             >
               {isValidatingDiscount ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : applyCooldown > 0 ? (
+                <span className="tabular-nums">WAIT {applyCooldown}S</span>
               ) : (
                 "APPLY CODE"
               )}
@@ -181,11 +199,18 @@ export default function OrderSummary({
           </div>
         )}
 
-        {discountError && (
-          <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
-            {discountError}
+        {applyCooldown > 0 ? (
+          <p className="text-xs text-red-600 mt-1 flex items-center gap-1" role="status">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            Too many attempts. You can try another code in {applyCooldown}s.
           </p>
+        ) : (
+          discountError && (
+            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {discountError}
+            </p>
+          )
         )}
       </div>
 

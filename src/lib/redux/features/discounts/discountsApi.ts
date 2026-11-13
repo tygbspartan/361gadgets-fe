@@ -33,6 +33,7 @@ export const discountsApi = createApi({
 
         return `/discounts?${searchParams.toString()}`;
       },
+      transformResponse: (response: DiscountsApiResponse) => response.data,
       providesTags: ["Discounts"],
     }),
 

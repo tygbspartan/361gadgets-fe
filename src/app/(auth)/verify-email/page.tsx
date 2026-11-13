@@ -27,19 +27,6 @@ function VerifyEmailContent() {
   const [success, setSuccess] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
-  useEffect(() => {
-    const urlToken = searchParams.get("token");
-    const urlEmail = searchParams.get("email");
-    if (urlToken) {
-      setToken(urlToken);
-      handleVerify(urlToken);
-    }
-    if (urlEmail) {
-      setEmail(decodeURIComponent(urlEmail));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
   const handleVerify = async (verificationToken?: string) => {
     const tokenToUse = verificationToken || token;
     if (!tokenToUse) { setError("Verification token is required"); return; }
@@ -52,6 +39,21 @@ function VerifyEmailContent() {
       setError(err.data?.message || "Email verification failed. The link may be invalid or expired.");
     }
   };
+
+  // Arriving from the email link: verify straight away. Declared after
+  // handleVerify so the effect doesn't use it before it exists.
+  useEffect(() => {
+    const urlToken = searchParams.get("token");
+    const urlEmail = searchParams.get("email");
+    if (urlToken) {
+      setToken(urlToken);
+      handleVerify(urlToken);
+    }
+    if (urlEmail) {
+      setEmail(decodeURIComponent(urlEmail));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleResend = async () => {
     if (!email) { setError("Please enter your email address"); return; }

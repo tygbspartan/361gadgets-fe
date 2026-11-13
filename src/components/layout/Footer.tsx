@@ -1,19 +1,7 @@
 import Image from "next/image";
 import { Icon } from "@iconify/react";
-import { BRAND } from "@/config/brand";
+import { BRAND, CONTACT, SOCIAL_LINKS as SOCIALS } from "@/config/brand";
 import FooterSitemap from "@/components/layout/FooterSitemap";
-
-const CONTACT = {
-  address: "Kalopul, Kathmandu",
-  phone: { label: "+977 976-8988420", tel: "+9779768988420" },
-  email: "361gadgets.np@gmail.com",
-};
-
-const SOCIALS = [
-  { label: "Instagram", href: "https://www.instagram.com/361gadgets_np/", icon: "mdi:instagram" },
-  { label: "TikTok", href: "https://www.tiktok.com/@361gadgets.np", icon: "ic:baseline-tiktok" },
-  { label: "Facebook", href: "https://www.facebook.com/np.361gadgets", icon: "mdi:facebook" },
-];
 
 /* The studio that built the site, credited in the bottom bar. */
 const FIBISPACE_URL = "https://fibispace.com";

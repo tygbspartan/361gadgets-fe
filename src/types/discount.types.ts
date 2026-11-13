@@ -14,6 +14,11 @@ export interface Discount {
 
   usageLimit: number | null;
   usedCount: number;
+  // Each customer (logged in) may use the code only once.
+  oncePerUser: boolean;
+
+  // Products the code is limited to (empty = all eligible products).
+  products?: { product: { id: number; name: string } }[];
 
   // Ownership — the vendor (admin) who created this promo. Null = platform-wide (superadmin).
   ownerId: number | null;
@@ -28,17 +33,21 @@ export interface CreateDiscountDto {
   type: "percentage" | "fixed";
   value: number;
 
-  minPurchaseAmount?: number;
-  maxDiscountAmount?: number;
+  // null clears a previously set limit (edit form).
+  minPurchaseAmount?: number | null;
+  maxDiscountAmount?: number | null;
 
   startDate: string;
   endDate: string;
   isActive?: boolean;
+  oncePerUser?: boolean;
+  // Replaces the product links when sent.
+  productIds?: number[];
 
-  usageLimit?: number;
+  usageLimit?: number | null;
 }
 
-export interface UpdateDiscountDto extends Partial<CreateDiscountDto> {}
+export type UpdateDiscountDto = Partial<CreateDiscountDto>;
 
 export interface DiscountsApiResponse {
   status: string;

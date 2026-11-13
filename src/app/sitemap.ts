@@ -4,8 +4,7 @@ import {
   getAllCategorySlugs,
   getAllBrandSlugs,
 } from "@/lib/server/catalog";
-
-const SITE = "https://www.361gadgets.com";
+import { SITE_URL as SITE } from "@/lib/seo/jsonld";
 
 // Regenerate at most hourly so new products/categories/brands appear without a
 // redeploy.
@@ -45,6 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
     changeFrequency: "weekly",
     priority: 0.8,
+    // Product photos, so they can show up in Google Images.
+    ...(p.images?.length ? { images: p.images } : {}),
   }));
 
   return [...staticRoutes, ...categoryRoutes, ...brandRoutes, ...productRoutes];
