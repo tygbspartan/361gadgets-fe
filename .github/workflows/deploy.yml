@@ -66,7 +66,7 @@ jobs:
           ACTION: ${{ github.event_name == 'push' && 'deploy' || inputs.action }}
         run: |
           ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" \
-            -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
             "$DEPLOY_USER@$DEPLOY_HOST" "$ACTION $GITHUB_SHA"
 
       - name: Remove key
