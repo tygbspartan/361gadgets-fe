@@ -194,7 +194,7 @@ function ProductListingContent() {
               <h1 className="font-montserrat font-medium text-[24px] leading-none text-black">
                 {pageTitle}
               </h1>
-              <div className="h-0.5 bg-primary mt-1.5" />
+              <div className="heading-rule -mx-4 mt-1.5" />
             </div>
             <ProductSort />
           </div>

@@ -47,9 +47,6 @@ export const metadata: Metadata = {
     "electronics Nepal",
     "361 Gadgets",
   ],
-  icons: {
-    icon: "/favicon.ico",
-  },
   openGraph: {
     type: "website",
     siteName: "361 Gadgets",

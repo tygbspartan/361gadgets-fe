@@ -7,6 +7,7 @@ import FeaturedProducts from "@/components/home/FeaturedProducts";
 import SpecialOffers from "@/components/home/SpecialOffers";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import HomepageFeatured from "@/components/home/HomepageFeatured";
+import AboutSection from "@/components/home/AboutSection";
 
 export default function HomePageContent() {
   return (
@@ -19,12 +20,7 @@ export default function HomePageContent() {
       {/* Brand marquee — full width, flush under the hero */}
       <BrandsCarousel />
 
-      {/* New Arrivals — 70px below brands */}
-      <div className="page-wrapper mt-17.5">
-        <NewArrivals limit={5} />
-      </div>
-
-      {/* Best Sellers — 70px below new arrivals */}
+      {/* Best Sellers — 70px below brands. ~15 products (see .home-grid-15) */}
       <div className="page-wrapper mt-17.5">
         <FeaturedProducts />
       </div>
@@ -34,12 +30,22 @@ export default function HomePageContent() {
         <SpecialOffers limit={5} />
       </div>
 
-      {/* Homepage Featured — 20px below special offers */}
+      {/* Homepage Featured ("Our best seller" card) — 20px below special offers */}
       <div className="mt-5">
         <HomepageFeatured />
       </div>
 
-      {/* Shop by Category — 70px below homepage featured */}
+      {/* New Arrivals — 70px below the featured card. ~15 products */}
+      <div className="page-wrapper mt-17.5">
+        <NewArrivals limit={16} />
+      </div>
+
+      {/* About us — who we are, 70px below new arrivals */}
+      <div className="page-wrapper mt-17.5">
+        <AboutSection />
+      </div>
+
+      {/* Shop by Category — last, 70px below about us */}
       <div className="page-wrapper mt-17.5">
         <ShopByCategory />
       </div>

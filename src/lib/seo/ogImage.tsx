@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 /*
  * Share card (Facebook, WhatsApp, Messenger, X previews) in the homepage
  * hero's style: grey board, faint circuit traces, uppercase headline with the
- * crimson full stop. Used by the opengraph-image routes.
+ * dark red full stop. Used by the opengraph-image routes.
  */
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = "image/png";
@@ -13,7 +13,7 @@ export const OG_CONTENT_TYPE = "image/png";
 const BG = "#ececec";
 const TRACE = "#d0d0d0";
 const NODE = "#bdbdbd";
-const ACCENT = "#a4133c";
+const ACCENT = "#8b0000";
 
 // The site's own type: Montserrat Bold for the headline, Inter for the rest.
 // Bundled .woff files (OFL licensed) so cards render without a network fetch.

@@ -87,7 +87,7 @@ export function SectionHeading({
             {children}
           </span>
         </div>
-        <div className="absolute -bottom-0.5 -left-2.5 -right-2.5 h-0.5 bg-primary" />
+        <div className="heading-rule absolute -bottom-0.5 -left-5 -right-5" />
       </div>
     </div>
   );

@@ -121,7 +121,8 @@ export const productsApi = createApi({
     }),
 
     getFeaturedProducts: builder.query<Product[], void>({
-      query: () => "/products?isFeatured=true",
+      // 16: the homepage grid shows 15 or 16 depending on columns (.home-grid-15).
+      query: () => "/products?isFeatured=true&limit=16",
       transformResponse: (response: ProductsResponse) => response.data.data,
       providesTags: ["Products"],
     }),

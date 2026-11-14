@@ -14,8 +14,8 @@ export default function FeaturedProducts() {
   return (
     <div>
       <SectionTitle>Shop Our Best Sellers</SectionTitle>
-      <div className="mt-5 lg:mt-8.75 home-product-grid">
-        {products.slice(0, 10).map((product) => (
+      <div className="mt-5 lg:mt-8.75 home-product-grid home-grid-15">
+        {products.slice(0, 16).map((product) => (
           <ProductGridCard key={product.id} product={product} />
         ))}
       </div>

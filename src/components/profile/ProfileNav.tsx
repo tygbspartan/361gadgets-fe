@@ -21,7 +21,7 @@ export default function ProfileNav() {
         <h2 className="font-montserrat font-medium text-[20px] leading-7 text-black">
           User Settings
         </h2>
-        <div className="h-0.5 bg-primary mt-1" />
+        <div className="heading-rule -mx-4 mt-1" />
       </div>
 
       {/* Nav items */}

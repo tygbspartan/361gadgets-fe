@@ -98,9 +98,9 @@
      Shared so they cannot drift apart. */
   --chrome-dark: #0f0f0f;
 
-  /* The one accent hue (deep crimson): the hero's full stop, its circuit spotlight and the
-     cursor follower. */
-  --brand-accent: #a4133c;
+  /* The one accent hue (dark red): the hero's full stop, its circuit spotlight,
+     the cursor follower and the underline under section headings. */
+  --brand-accent: #8b0000;
 }
 
 @media (min-width: 1024px) {
@@ -460,6 +460,23 @@
   }
 }
 
+/* Homepage sections showing "about 15" products (Best Sellers, New Arrivals):
+   16 are fetched, and the last one is hidden where the grid has 3 or 5
+   columns, so every row is full: 3 rows of 5, 4 of 4, 5 of 3, 8 of 2. */
+.home-grid-15 > :nth-child(n + 17) {
+  display: none;
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .home-grid-15 > :nth-child(16) {
+    display: none;
+  }
+}
+@media (min-width: 1350px) {
+  .home-grid-15 > :nth-child(16) {
+    display: none;
+  }
+}
+
 /* Product gallery thumbnails: 3 per row on mobile, 4 from 768px, then a
    full-width column from 1024px (beside the main image). */
 .thumb-strip-item {
@@ -655,5 +672,20 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /* Underline under headings: the accent red, fading out at both ends. Used
+     with negative side margins (or offsets) so it runs a little past the
+     text, and the faded tips sit beyond the words. */
+  .heading-rule {
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--brand-accent) 22%,
+      var(--brand-accent) 78%,
+      transparent 100%
+    );
   }
 }

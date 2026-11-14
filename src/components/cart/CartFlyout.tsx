@@ -120,8 +120,8 @@ export default function CartFlyout({ open, onClose }: Props) {
                 My Cart
               </span>
             </div>
-            {/* Underline: extends 10px beyond icon+text on each side */}
-            <div className="absolute -bottom-0.5 -left-2.5 -right-2.5 h-0.5 bg-primary" />
+            {/* Underline: runs 20px past icon+text on each side, ends faded */}
+            <div className="heading-rule absolute -bottom-0.5 -left-5 -right-5" />
           </div>
         </div>
 

@@ -15,7 +15,7 @@ import { PageReadyContext } from "@/components/providers/LoadingProvider";
 
 /*
  * The hero's stage: a circuit board that draws itself in on first load, then
- * idles with a few travelling pulses and a crimson spotlight that follows the
+ * idles with a few travelling pulses and a dark red spotlight that follows the
  * cursor (or wanders on its own when there is no cursor to follow).
  *
  * The copy is passed in as children so it stays out of this client component.

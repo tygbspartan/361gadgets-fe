@@ -9,7 +9,7 @@ interface NewArrivalsProps {
   limit?: number;
 }
 
-export default function NewArrivals({ limit = 10 }: NewArrivalsProps) {
+export default function NewArrivals({ limit = 16 }: NewArrivalsProps) {
   const { data: products, isLoading, error } = useGetNewArrivalsQuery(limit);
 
   if (isLoading) return <Spinner />;
@@ -18,8 +18,8 @@ export default function NewArrivals({ limit = 10 }: NewArrivalsProps) {
   return (
     <div>
       <SectionTitle>Shop New Arrivals</SectionTitle>
-      <div className="mt-5 lg:mt-8.75 home-product-grid">
-        {products.slice(0, 10).map((product) => (
+      <div className="mt-5 lg:mt-8.75 home-product-grid home-grid-15">
+        {products.slice(0, limit).map((product) => (
           <ProductGridCard key={product.id} product={product} />
         ))}
       </div>

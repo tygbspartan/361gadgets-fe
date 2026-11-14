@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /*
- * A small crimson square that tails the mouse and doubles as a guide to what can
+ * A small dark red square that tails the mouse and doubles as a guide to what can
  * be done:
  *   • at rest it sits on the tip of the pointer and follows with a lag — move
  *     fast and it trails like a tail, then catches up;
@@ -203,10 +203,10 @@ export default function CursorFollower() {
    * For each state: where the shape sits relative to the pointer's tip, its
    * look, height, widest it may get, and inner padding. Width comes from the
    * content (nothing, or the word), up to that limit.
-   *   • square: solid crimson, centred on the tip;
-   *   • link: a 48px see-through ring with a light crimson tint, centred a little
+   *   • square: solid dark red, centred on the tip;
+   *   • link: a 48px see-through ring with a light dark-red tint, centred a little
    *     below the tip so it surrounds the whole arrow or hand;
-   *   • tag: solid crimson, dropped below and right of the tip so the pointer
+   *   • tag: solid dark red, dropped below and right of the tip so the pointer
    *     doesn't cover the word — or left of / above it when that side would
    *     run off the window (see placeTag).
    */
