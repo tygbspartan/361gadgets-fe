@@ -1,5 +1,9 @@
 import { cache } from "react";
 import { serverApiBase } from "@/lib/serverApi";
+
+/** Every catalog fetch carries this tag; POST /api/revalidate (called by the
+ *  backend when products, categories or brands change) expires them all. */
+export const CATALOG_TAG = "catalog";
 import type { Faq, Product } from "@/types/product.types";
 import { DEFAULT_SHIPPING, type ShippingRates } from "@/lib/seo/jsonld";
 import type { ProductReviewsResponse } from "@/types/review.types";
@@ -15,7 +19,7 @@ export const getProductBySlug = cache(
       const base = await serverApiBase();
       const res = await fetch(
         `${base}/products/slug/${encodeURIComponent(slug)}`,
-        { next: { revalidate: 3600, tags: [`product:${slug}`] } }
+        { next: { revalidate: 3600, tags: [CATALOG_TAG, `product:${slug}`] } }
       );
       if (!res.ok) return null; // 404 (inactive/missing) or upstream error
       const json = await res.json();
@@ -40,7 +44,7 @@ export const getProductReviews = cache(
     try {
       const base = await serverApiBase();
       const res = await fetch(`${base}/reviews/product/${productId}`, {
-        next: { revalidate: 3600, tags: [`product-reviews:${productId}`] },
+        next: { revalidate: 3600, tags: [CATALOG_TAG, `product-reviews:${productId}`] },
       });
       if (!res.ok) return EMPTY_REVIEWS;
       const json = await res.json();
@@ -91,7 +95,7 @@ export const getCategoryBySlug = cache(
     try {
       const base = await serverApiBase();
       const res = await fetch(`${base}/categories/slug/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 3600, tags: [`category:${slug}`] },
+        next: { revalidate: 3600, tags: [CATALOG_TAG, `category:${slug}`] },
       });
       if (!res.ok) return null;
       const json = await res.json();
@@ -107,7 +111,7 @@ export const getBrandBySlug = cache(
     try {
       const base = await serverApiBase();
       const res = await fetch(`${base}/brands/slug/${encodeURIComponent(slug)}`, {
-        next: { revalidate: 3600, tags: [`brand:${slug}`] },
+        next: { revalidate: 3600, tags: [CATALOG_TAG, `brand:${slug}`] },
       });
       if (!res.ok) return null;
       const json = await res.json();
@@ -125,7 +129,7 @@ export const getBrandsList = cache(
     try {
       const base = await serverApiBase();
       const qs = categorySlug ? `?category=${encodeURIComponent(categorySlug)}` : "";
-      const res = await fetch(`${base}/brands${qs}`, { next: { revalidate: 3600 } });
+      const res = await fetch(`${base}/brands${qs}`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
       if (!res.ok) return [];
       const json = await res.json();
       return ((json?.data ?? []) as { id: number; name: string; slug: string }[]).map(
@@ -152,7 +156,7 @@ export async function getProductsPage(query: Record<string, string | number | un
       if (v !== undefined && v !== "") sp.set(k, String(v));
     }
     const res = await fetch(`${base}/products?${sp.toString()}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 3600, tags: [CATALOG_TAG] },
     });
     if (!res.ok) return EMPTY_PAGE;
     const json = await res.json();
@@ -169,7 +173,7 @@ async function getAllSlugs(
 ): Promise<{ slug: string; updatedAt?: string }[]> {
   try {
     const base = await serverApiBase();
-    const res = await fetch(`${base}${path}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${base}${path}`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
     if (!res.ok) return [];
     return extract(await res.json());
   } catch {
@@ -221,7 +225,7 @@ export async function getAllProductSlugs(): Promise<
 
   try {
     const base = await serverApiBase();
-    const res = await fetch(`${base}${pagePath(1)}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${base}${pagePath(1)}`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
     if (!res.ok) return [];
     const first: SlugsPage = await res.json();
     const totalPages = first?.data?.pagination?.totalPages ?? 1;
@@ -252,7 +256,7 @@ export const getRelatedProducts = cache(
       try {
         const res = await fetch(
           `${base}/products?categoryId=${catId}&limit=8&isActive=true`,
-          { next: { revalidate: 3600 } }
+          { next: { revalidate: 3600, tags: [CATALOG_TAG] } }
         );
         if (!res.ok) return [];
         const json = await res.json();
@@ -274,7 +278,7 @@ export const getRelatedProducts = cache(
 export async function getTopCategories(limit = 6): Promise<{ name: string; slug: string }[]> {
   try {
     const base = await serverApiBase();
-    const res = await fetch(`${base}/categories`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${base}/categories`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
     if (!res.ok) return [];
     const json = await res.json();
     type CategoryRow = {
@@ -300,7 +304,7 @@ export async function getTopCategories(limit = 6): Promise<{ name: string; slug:
 export const getShippingRates = cache(async (): Promise<ShippingRates> => {
   try {
     const base = await serverApiBase();
-    const res = await fetch(`${base}/settings/public`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${base}/settings/public`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
     if (!res.ok) return DEFAULT_SHIPPING;
     const d = (await res.json())?.data ?? {};
     const num = (v: unknown, fallback: number) => (Number.isFinite(Number(v)) && v !== null ? Number(v) : fallback);
