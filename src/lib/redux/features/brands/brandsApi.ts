@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithAuth } from "../../baseQuery";
+import type { Faq } from "@/types/product.types";
 
 export interface Brand {
   id: number;
@@ -12,6 +13,9 @@ export interface Brand {
   metaTitle: string | null;
   metaDescription: string | null;
   seoDescription: string | null;
+  /** Buying guide shown under the products on the brand page (detail responses only). */
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
   /** Vendor this brand is reserved for. null = unclaimed. */
   ownerId: number | null;
   createdAt: string;
@@ -34,6 +38,7 @@ export interface AdminBrand extends Brand {
 export interface CreateBrandRequest {
   name: string;
   description?: string;
+  seoDescription?: string;
   isFeatured?: boolean;
   isActive?: boolean;
   metaTitle?: string;
@@ -42,12 +47,15 @@ export interface CreateBrandRequest {
 
 export interface UpdateBrandRequest {
   name?: string;
+  slug?: string;
   description?: string;
   isFeatured?: boolean;
   isActive?: boolean;
   metaTitle?: string;
   metaDescription?: string;
   seoDescription?: string;
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
 }
 
 export const brandsApi = createApi({
@@ -58,6 +66,18 @@ export const brandsApi = createApi({
     // Get all brands
     getBrands: builder.query<{ status: string; data: Brand[] }, void>({
       query: () => "/brands",
+      providesTags: ["Brands"],
+    }),
+
+    // Brands with products in a category (and its subcategories): filter sidebar.
+    getBrandsForCategory: builder.query<{ status: string; data: Brand[] }, string>({
+      query: (slug) => `/brands?category=${encodeURIComponent(slug)}`,
+      providesTags: ["Brands"],
+    }),
+
+    // Active brands marked Featured (homepage "Shop by Brand").
+    getFeaturedBrands: builder.query<{ status: string; data: Brand[] }, void>({
+      query: () => "/brands/featured",
       providesTags: ["Brands"],
     }),
 
@@ -160,6 +180,8 @@ export const brandsApi = createApi({
 
 export const {
   useGetBrandsQuery,
+  useGetFeaturedBrandsQuery,
+  useGetBrandsForCategoryQuery,
   useGetAdminBrandsQuery,
   useGetBrandByIdQuery,
   useCreateBrandMutation,

@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { ROUTES } from "@/constants/routes";
 import { Icon } from "@iconify/react";
 import { Product } from "@/types/product.types";
 import { useCart } from "@/lib/redux/features/cart/useCart";
@@ -315,7 +317,16 @@ export default function ProductDetails({
             <div className="flex flex-col gap-1.25">
               <p className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-black">Brand</p>
               <p className="font-inter font-normal text-[14px] lg:text-base leading-5 tracking-[0.02em] text-justify text-[#4B4B4B]">
-                {product.brand.name}
+                {product.brand.slug ? (
+                  <Link
+                    href={`${ROUTES.BRAND}/${product.brand.slug}`}
+                    className="underline-offset-4 hover:text-black hover:underline"
+                  >
+                    {product.brand.name}
+                  </Link>
+                ) : (
+                  product.brand.name
+                )}
               </p>
             </div>
           )}
@@ -323,7 +334,16 @@ export default function ProductDetails({
             <div className="flex flex-col gap-1.25">
               <p className="font-inter font-normal text-[14px] lg:text-base leading-none capitalize text-black">Product Type</p>
               <p className="font-inter font-normal text-[14px] lg:text-base leading-5 tracking-[0.02em] text-justify text-[#4B4B4B]">
-                {product.category.name}
+                {product.category.slug ? (
+                  <Link
+                    href={`${ROUTES.CATEGORY}/${product.category.slug}`}
+                    className="underline-offset-4 hover:text-black hover:underline"
+                  >
+                    {product.category.name}
+                  </Link>
+                ) : (
+                  product.category.name
+                )}
               </p>
             </div>
           )}

@@ -199,6 +199,8 @@ export function buildCollectionPageJsonLd(opts: {
   url: string;
   total: number;
   items: { name: string; slug: string }[];
+  /** What the collection is about, e.g. the Brand on a brand page. */
+  about?: Record<string, unknown>;
 }) {
   return {
     "@context": "https://schema.org",
@@ -207,6 +209,7 @@ export function buildCollectionPageJsonLd(opts: {
     description: opts.description,
     url: opts.url,
     isPartOf: { "@id": WEBSITE_ID },
+    ...(opts.about ? { about: opts.about } : {}),
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: opts.total,

@@ -20,12 +20,15 @@ export default function FaqSection({
   return (
     <section aria-labelledby="faq-heading">
       <JsonLd data={buildFaqJsonLd(items)} />
-      <h2
-        id="faq-heading"
-        className="font-montserrat font-medium text-[18px] lg:text-2xl leading-none text-black w-fit mx-auto lg:mx-0 text-center border-b-2 border-primary pb-1 mb-5"
-      >
-        {title}
-      </h2>
+      <div className="w-fit mx-auto lg:mx-0 mb-5">
+        <h2
+          id="faq-heading"
+          className="font-montserrat font-medium text-[18px] lg:text-2xl leading-tight text-black text-center lg:text-left"
+        >
+          {title}
+        </h2>
+        <div className="heading-rule -mx-4 mt-1.5" />
+      </div>
       <div className="border border-[#E5E5E5] rounded-[6px] divide-y divide-[#EFEFEF]">
         {items.map((faq, i) => (
           <details key={i} className="group" open={i === 0}>

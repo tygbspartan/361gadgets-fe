@@ -8,6 +8,7 @@ import SpecialOffers from "@/components/home/SpecialOffers";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import HomepageFeatured from "@/components/home/HomepageFeatured";
 import AboutSection from "@/components/home/AboutSection";
+import ShopByBrand from "@/components/home/ShopByBrand";
 
 export default function HomePageContent() {
   return (
@@ -35,7 +36,12 @@ export default function HomePageContent() {
         <HomepageFeatured />
       </div>
 
-      {/* New Arrivals — 70px below the featured card. ~15 products */}
+      {/* Shop by Brand — featured brands, 70px below the featured card */}
+      <div className="page-wrapper mt-17.5">
+        <ShopByBrand />
+      </div>
+
+      {/* New Arrivals — 70px below Shop by Brand. ~15 products */}
       <div className="page-wrapper mt-17.5">
         <NewArrivals limit={16} />
       </div>

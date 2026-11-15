@@ -23,7 +23,7 @@ function CategoryCard({ category }: { category: Category }) {
     product?.images?.[0]?.imageUrl;
 
   return (
-    <Link href={`${ROUTES.PRODUCTS}?category=${category.slug}`} data-cursor="Explore" className="block w-full">
+    <Link href={`${ROUTES.CATEGORY}/${category.slug}`} data-cursor="Explore" className="block w-full">
       <div className="surface-card hover-lift group relative w-full aspect-317/359 rounded-2xl overflow-hidden">
         {primaryImg ? (
           <Image

@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux";
 import { setActiveCategorySlug } from "@/lib/redux/features/ui/uiSlice";
 import { useGetProductsQuery } from "@/lib/redux/features/products/productsApi";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
-import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
+import { useGetBrandsQuery, useGetBrandsForCategoryQuery } from "@/lib/redux/features/brands/brandsApi";
 import ProductGridCard from "@/components/products/ProductGridCard";
 import ProductCardSkeleton from "@/components/products/ProductCardSkeleton";
 import Spinner from "@/components/ui/Spinner";
@@ -80,7 +80,12 @@ function ProductListingContent() {
   }, { skip: pageSize === null });
 
   const { data: categoriesData } = useGetCategoriesQuery();
-  const { data: brandsData } = useGetBrandsQuery();
+  const { data: allBrandsData } = useGetBrandsQuery();
+  // In a category, the brand filter lists only brands that have products there.
+  const { data: categoryBrandsData } = useGetBrandsForCategoryQuery(categorySlug ?? "", {
+    skip: !categorySlug,
+  });
+  const brandsData = categorySlug ? categoryBrandsData : allBrandsData;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -152,8 +157,8 @@ function ProductListingContent() {
   };
 
   const getBrandName = () => {
-    if (!brandSlug || !brandsData?.data) return null;
-    return brandsData.data.find((b) => b.slug === brandSlug)?.name;
+    if (!brandSlug || !allBrandsData?.data) return null;
+    return allBrandsData.data.find((b) => b.slug === brandSlug)?.name;
   };
 
   const pageTitle = searchQuery

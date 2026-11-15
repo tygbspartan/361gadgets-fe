@@ -4,6 +4,8 @@ import { SITE_URL, buildBreadcrumbJsonLd, buildCollectionPageJsonLd, toPlainText
 import JsonLd from "@/components/seo/JsonLd";
 import { getBrandBySlug, getProductsPage } from "@/lib/server/catalog";
 import CollectionView from "@/components/catalog/CollectionView";
+import SeoContent from "@/components/seo/SeoContent";
+import FaqSection from "@/components/seo/FaqSection";
 
 const LIMIT = 12;
 
@@ -35,7 +37,9 @@ export async function generateMetadata({
     truncate(toPlainText(brand.metaDescription)) ||
     truncate(toPlainText(brand.seoDescription)) ||
     `Shop genuine ${brand.name} products online in Nepal at 361 Gadgets — authentic, best prices, fast delivery.`;
-  const title = `${brand.name} Products in Nepal — Genuine | 361 Gadgets`;
+  // The admin's Meta Title wins; otherwise a standard "<Brand> … in Nepal" title.
+  const title =
+    brand.metaTitle?.trim() || `${brand.name} Products in Nepal — Genuine | 361 Gadgets`;
 
   return {
     title: { absolute: title },
@@ -81,6 +85,17 @@ export default async function BrandPage({
   });
 
   const cleanPath = `/brand/${slug}`;
+  // The buying guide and FAQ go on the canonical first page only, so paginated
+  // and filtered variants don't repeat them.
+  const showSeoContent =
+    page === 1 &&
+    !Object.keys(sp).some((k) => k !== "page" && sp[k] !== undefined && sp[k] !== "");
+  // Shown above the products: the short description (a lead line under the
+  // brand name), then the longer brand page copy.
+  const intro = [brand.description, brand.seoDescription]
+    .map((t) => t?.trim())
+    .filter((t, i, all) => t && all.indexOf(t) === i)
+    .join("\n\n");
   // Pagination hrefs preserve every active filter/sort, swapping only the page.
   const hrefForPage = (n: number) => {
     const qs = new URLSearchParams();
@@ -102,6 +117,14 @@ export default async function BrandPage({
     url: `${SITE_URL}${cleanPath}`,
     total: pagination.total,
     items: products.map((p) => ({ name: p.name, slug: p.slug })),
+    // The brand itself, so search engines tie this page to it.
+    about: {
+      "@type": "Brand",
+      name: brand.name,
+      url: `${SITE_URL}${cleanPath}`,
+      ...(brand.logoUrl ? { logo: brand.logoUrl } : {}),
+      ...(brand.description?.trim() ? { description: brand.description.trim() } : {}),
+    },
   });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Home", url: SITE_URL },
@@ -114,13 +137,21 @@ export default async function BrandPage({
       <JsonLd data={breadcrumbJsonLd} />
       <CollectionView
         title={brand.name}
-        intro={brand.seoDescription}
+        intro={intro || null}
         products={products}
         page={page}
         totalPages={pagination.totalPages}
         hrefForPage={hrefForPage}
         brands={[]}
         showBrandFilter={false}
+        footer={
+          showSeoContent && (brand.seoContent?.trim() || brand.faqs?.length) ? (
+            <>
+              <SeoContent content={brand.seoContent} />
+              <FaqSection faqs={brand.faqs} title={`${brand.name}: frequently asked questions`} />
+            </>
+          ) : null
+        }
       />
     </>
   );

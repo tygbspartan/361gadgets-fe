@@ -207,7 +207,7 @@ export default function BrandsCarousel() {
             {brands.map((brand) => (
               <Link
                 key={`${copy}-${brand.id}`}
-                href={`${ROUTES.PRODUCTS}?brand=${brand.slug}`}
+                href={`${ROUTES.BRAND}/${brand.slug}`}
                 data-cursor={`Shop ${brand.name}`}
                 /* Only the first set is reachable by keyboard; the rest are
                    duplicates that would otherwise triple the tab stops. */

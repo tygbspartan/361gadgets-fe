@@ -34,6 +34,7 @@ export default function CreateBrandPage() {
     description: "",
     metaTitle: "",
     metaDescription: "",
+    seoDescription: "",
     isFeatured: false,
     isActive: true,
   });
@@ -91,6 +92,7 @@ export default function CreateBrandPage() {
         description: formData.description || undefined,
         metaTitle: formData.metaTitle || undefined,
         metaDescription: formData.metaDescription || undefined,
+        seoDescription: formData.seoDescription || undefined,
         isFeatured: formData.isFeatured,
         isActive: formData.isActive,
       }).unwrap();
@@ -172,7 +174,7 @@ export default function CreateBrandPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Short description</Label>
               <textarea
                 id="description"
                 name="description"
@@ -182,7 +184,7 @@ export default function CreateBrandPage() {
                 className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-muted-foreground">
-                Optional brand description
+                Shown under the brand name on the brand page. One or two sentences.
               </p>
             </div>
           </CardContent>
@@ -285,6 +287,21 @@ export default function CreateBrandPage() {
                 Recommended: 150-160 characters
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seoDescription">Brand page copy (SEO)</Label>
+              <textarea
+                id="seoDescription"
+                name="seoDescription"
+                value={formData.seoDescription}
+                onChange={handleInputChange}
+                placeholder="Longer intro shown above the products on the brand page…"
+                className="w-full min-h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional. The buying guide and FAQ can be added from Edit after the brand is created.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -328,7 +345,7 @@ export default function CreateBrandPage() {
                   Featured
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Show this brand in featured section
+                  Show this brand in “Shop by Brand” on the homepage
                 </p>
               </div>
               <input

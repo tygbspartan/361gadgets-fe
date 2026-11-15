@@ -30,6 +30,8 @@ import {
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import FaqEditor, { cleanFaqs } from "@/components/admin/FaqEditor";
+import type { Faq } from "@/types/product.types";
 
 export default function EditBrandPage() {
   const router = useRouter();
@@ -50,13 +52,16 @@ export default function EditBrandPage() {
   // Form state
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     description: "",
     metaTitle: "",
     metaDescription: "",
     seoDescription: "",
+    seoContent: "",
     isFeatured: false,
     isActive: true,
   });
+  const [faqs, setFaqs] = useState<Faq[]>([]);
 
   // Logo file state (new file to upload)
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -73,13 +78,16 @@ export default function EditBrandPage() {
       const brand = brandData.data;
       setFormData({
         name: brand.name || "",
+        slug: brand.slug || "",
         description: brand.description || "",
         metaTitle: brand.metaTitle || "",
         metaDescription: brand.metaDescription || "",
         seoDescription: brand.seoDescription || "",
+        seoContent: brand.seoContent || "",
         isFeatured: brand.isFeatured ?? false,
         isActive: brand.isActive ?? true,
       });
+      setFaqs(Array.isArray(brand.faqs) ? brand.faqs : []);
     }
   }, [brandData]);
 
@@ -134,10 +142,18 @@ export default function EditBrandPage() {
         id: brandId,
         brand: {
           name: formData.name,
+          // The URL slug: only sent when changed (the server tidies it, e.g. "Samsung" -> "samsung").
+          slug:
+            formData.slug.trim() && formData.slug.trim() !== brandData?.data?.slug
+              ? formData.slug.trim()
+              : undefined,
           description: formData.description || undefined,
           metaTitle: formData.metaTitle || undefined,
           metaDescription: formData.metaDescription || undefined,
           seoDescription: formData.seoDescription || undefined,
+          // null clears the guide; [] clears the FAQ.
+          seoContent: formData.seoContent.trim() || null,
+          faqs: cleanFaqs(faqs),
           isFeatured: formData.isFeatured,
           isActive: formData.isActive,
         },
@@ -246,7 +262,22 @@ export default function EditBrandPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="slug">URL slug</Label>
+              <Input
+                id="slug"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                placeholder="e.g. samsung"
+              />
+              <p className="text-xs text-muted-foreground">
+                The brand page address: 361gadgets.com/brand/<strong>{formData.slug || "…"}</strong>. Lowercase
+                words joined by hyphens. Changing it changes the page URL.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Short description</Label>
               <textarea
                 id="description"
                 name="description"
@@ -256,7 +287,7 @@ export default function EditBrandPage() {
                 className="w-full min-h-25 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-muted-foreground">
-                Optional brand description
+                Shown under the brand name on the brand page. One or two sentences.
               </p>
             </div>
           </CardContent>
@@ -419,6 +450,37 @@ export default function EditBrandPage() {
           </CardContent>
         </Card>
 
+        {/* Buying guide + FAQ, shown under the product grid */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Buying guide & FAQ (optional)</CardTitle>
+            <CardDescription>
+              Shown under the products on the brand page (first page only). Helps shoppers and search engines.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="seoContent">Buying guide</Label>
+              <textarea
+                id="seoContent"
+                name="seoContent"
+                value={formData.seoContent}
+                onChange={handleInputChange}
+                placeholder={"## Buy JBL in Nepal\n\nA paragraph about the brand…\n\n## How to choose\n- Portable or party speaker\n- Battery life"}
+                className="w-full min-h-56 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave a blank line between paragraphs. Start a line with <code>## </code> for a heading
+                and <code>- </code> for a bullet point. 300–600 words works well.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Frequently asked questions</Label>
+              <FaqEditor value={faqs} onChange={setFaqs} idPrefix="brand-faq" />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Status */}
         <Card>
           <CardHeader>
@@ -459,7 +521,7 @@ export default function EditBrandPage() {
                   Featured
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Show this brand in featured section
+                  Show this brand in “Shop by Brand” on the homepage
                 </p>
               </div>
               <input

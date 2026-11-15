@@ -72,8 +72,11 @@ export interface BrandDetail {
   name: string;
   slug: string;
   description: string | null;
+  metaTitle?: string | null;
   metaDescription: string | null;
   seoDescription: string | null;
+  seoContent?: string | null;
+  faqs?: Faq[] | null;
   logoUrl: string | null;
   productCount?: number;
 }
@@ -115,12 +118,14 @@ export const getBrandBySlug = cache(
   }
 );
 
-/** Lightweight brand list for the category page's filter sidebar. */
+/** Lightweight brand list for a filter sidebar. With a category slug, only the
+ *  brands that have products in that category (or its subcategories). */
 export const getBrandsList = cache(
-  async (): Promise<{ id: number; name: string; slug: string }[]> => {
+  async (categorySlug?: string): Promise<{ id: number; name: string; slug: string }[]> => {
     try {
       const base = await serverApiBase();
-      const res = await fetch(`${base}/brands`, { next: { revalidate: 3600 } });
+      const qs = categorySlug ? `?category=${encodeURIComponent(categorySlug)}` : "";
+      const res = await fetch(`${base}/brands${qs}`, { next: { revalidate: 3600 } });
       if (!res.ok) return [];
       const json = await res.json();
       return ((json?.data ?? []) as { id: number; name: string; slug: string }[]).map(
@@ -182,7 +187,7 @@ export const getAllCategorySlugs = () =>
 export const getAllBrandSlugs = () =>
   getAllSlugs("/brands", (j) =>
     (j?.data ?? [])
-      .filter((b: any) => b?.slug)
+      .filter((b: any) => b?.slug && b?.isActive !== false)
       .map((b: any) => ({ slug: b.slug, updatedAt: b.updatedAt }))
   );
 

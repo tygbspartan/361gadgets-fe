@@ -107,7 +107,7 @@ export default async function CategoryPage({
       maxPrice: str(sp.maxPrice),
       inStock: str(sp.inStock),
     }),
-    getBrandsList(),
+    getBrandsList(slug),
   ]);
 
   const chain = chainOf(category);
