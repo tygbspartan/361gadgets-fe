@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { Review } from "@/types/review.types";
 import EmptyState from "@/components/ui/EmptyState";
-import { StarDisplay, timeAgo } from "./shared";
+import { StarDisplay, timeAgo, PdpHeading } from "./shared";
 
 
 interface Props {
@@ -16,9 +16,7 @@ export default function ProductReviewsList({ reviews }: Props) {
 
   return (
     <div>
-      <h2 className="font-montserrat font-medium text-[18px] lg:text-2xl leading-none text-black w-fit mx-auto lg:mx-0 text-center border-b-2 border-primary pb-1 mb-5">
-        Reviews
-      </h2>
+      <PdpHeading>Reviews</PdpHeading>
 
       {reviews.length === 0 ? (
         <EmptyState

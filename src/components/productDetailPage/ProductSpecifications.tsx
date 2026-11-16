@@ -1,6 +1,7 @@
 "use client";
 
 import { Product } from "@/types/product.types";
+import { PdpHeading } from "./shared";
 
 interface Props {
   product: Product;
@@ -22,21 +23,22 @@ export default function ProductSpecifications({ product }: Props) {
 
   return (
     <div>
-      <h2 className="font-montserrat font-medium text-[18px] lg:text-2xl leading-none text-black w-fit mx-auto lg:mx-0 text-center border-b-2 border-primary pb-1 mb-5">
-        Specifications
-      </h2>
+      <PdpHeading>Specifications</PdpHeading>
 
-      <div className="border border-[#E5E5E5] rounded-[6px] overflow-hidden">
-        <dl className="grid grid-cols-1 lg:grid-cols-2">
+      {/* A plain two-column table: the name in a shaded column, the value right
+          beside it (left-aligned), one row per spec. Capped in width so a value
+          never ends up far from its name on wide screens. */}
+      <div className="max-w-4xl overflow-hidden rounded-xl border border-[#E5E5E5]">
+        <dl className="divide-y divide-[#EBEBEB]">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="flex items-start justify-between gap-4 px-4 py-3 border-b border-[#EFEFEF] hover:bg-[#FAFAFA] transition-colors last:border-b-0"
+              className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:grid-cols-[14rem_minmax(0,1fr)]"
             >
-              <dt className="font-inter font-medium text-[13px] lg:text-sm leading-5 text-black w-2/5 shrink-0">
+              <dt className="bg-[#F6F6F6] px-3.5 py-3 font-inter text-[13px] font-medium leading-5 text-[#111111] sm:px-5 lg:text-[14px]">
                 {row.key}
               </dt>
-              <dd className="font-inter font-normal text-[13px] lg:text-sm leading-5 tracking-[0.01em] text-[#4B4B4B] text-right">
+              <dd className="px-3.5 py-3 font-inter text-[13px] leading-5 text-[#3A3A3A] break-words sm:px-5 lg:text-[14px]">
                 {row.value}
               </dd>
             </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCreateReviewMutation } from "@/lib/redux/features/reviews/reviewsApi";
 import { useToast } from "@/components/ui/ToastStack";
 import { ROUTES } from "@/constants/routes";
-import { StarSelector } from "./shared";
+import { StarSelector, PdpHeading } from "./shared";
 
 interface Props {
   productId: number;
@@ -44,9 +44,7 @@ export default function WriteReview({ productId, isAuthenticated, onReviewSubmit
   return (
     <>
       <div>
-        <h2 className="font-montserrat font-medium text-[18px] lg:text-2xl leading-none text-black w-fit mx-auto lg:mx-0 text-center border-b-2 border-primary pb-1 mb-5">
-          Write a review!
-        </h2>
+        <PdpHeading>Write a review!</PdpHeading>
 
         {hasReviewed ? (
           <p className="font-inter font-normal text-[12px] lg:text-[16px] leading-6 text-[#4B4B4B]">

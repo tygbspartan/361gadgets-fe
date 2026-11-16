@@ -93,6 +93,19 @@ export function SectionHeading({
   );
 }
 
+/** Section heading on the product page (Specifications, Reviews, …) with the
+ *  site-wide red underline that fades out at both ends. */
+export function PdpHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-fit mx-auto lg:mx-0 mb-5">
+      <h2 className="font-montserrat font-medium text-[18px] lg:text-2xl leading-tight text-black text-center lg:text-left">
+        {children}
+      </h2>
+      <div className="heading-rule -mx-4 mt-1.5" />
+    </div>
+  );
+}
+
 export interface ReviewSummary {
   averageRating: number;
   totalReviews: number;
