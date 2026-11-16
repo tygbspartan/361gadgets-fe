@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGetBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
+import { BrandStripSkeleton } from "@/components/skeletons/HomeSkeleton";
 import Image from "next/image";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
@@ -28,7 +29,7 @@ const DRAG_SLOP = 6;
 const MAX_VELOCITY = 3;
 
 export default function BrandsCarousel() {
-  const { data: brandsData } = useGetBrandsQuery();
+  const { data: brandsData, isLoading: brandsLoading } = useGetBrandsQuery();
   const brands = (brandsData?.data ?? []).filter((b) => b.logoUrl && b.isActive);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -170,6 +171,9 @@ export default function BrandsCarousel() {
     didDrag.current = false;
   };
 
+  // Still loading: hold the strip's place with logo-sized placeholders.
+  // (Only while loading: on an error the strip is simply left out.)
+  if (brandsLoading) return <BrandStripSkeleton overlap />;
   if (brands.length === 0) return null;
 
   return (

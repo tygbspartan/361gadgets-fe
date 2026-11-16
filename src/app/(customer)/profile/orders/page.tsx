@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import EmptyState from "@/components/ui/EmptyState";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import ListSkeleton from "@/components/skeletons/ListSkeleton";
 import { RootState } from "@/lib/redux/store";
 import { useGetUserOrdersQuery } from "@/lib/redux/features/orders/ordersApi";
 import { useGetMyReviewsQuery } from "@/lib/redux/features/reviews/reviewsApi";
@@ -88,9 +88,7 @@ export default function ProfileOrdersPage() {
       <ProfileNavMobile />
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
+        <ListSkeleton rows={3} />
       ) : orders.length === 0 ? (
         <EmptyState
           icon="lets-icons:order-light"

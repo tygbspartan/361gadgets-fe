@@ -1,15 +1,11 @@
-"use client";
-
-import { useGetFeaturedProductsQuery } from "@/lib/redux/features/products/productsApi";
+import type { Product } from "@/types/product.types";
 import ProductGridCard from "@/components/products/ProductGridCard";
 import SectionTitle from "@/components/home/SectionTitle";
-import Spinner from "@/components/ui/Spinner";
 
-export default function FeaturedProducts() {
-  const { data: products, isLoading, error } = useGetFeaturedProductsQuery();
-
-  if (isLoading) return <Spinner />;
-  if (error || !products || products.length === 0) return null;
+/* Best Sellers: products marked Featured. Data comes from the server
+   (getHomeData), so the grid is in the HTML from the first byte. */
+export default function FeaturedProducts({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
 
   return (
     <div>

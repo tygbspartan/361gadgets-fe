@@ -317,3 +317,69 @@ export const getShippingRates = cache(async (): Promise<ShippingRates> => {
     return DEFAULT_SHIPPING;
   }
 });
+
+/* ── Homepage ──────────────────────────────────────────────────────────────
+   Everything the homepage sections show, fetched on the server in parallel so
+   the sections arrive already rendered in the HTML: no client fetching,
+   spinners or re-renders while the page starts up. Each part is empty on
+   failure, and the section then simply hides. */
+
+export interface HomeBrand {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  isActive: boolean;
+}
+
+export interface HomeCategoryTile {
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+}
+
+export interface HomeData {
+  bestSellers: Product[];
+  newArrivals: Product[];
+  specialOffers: Product[];
+  spotlight: Product[];
+  featuredBrands: HomeBrand[];
+  categoryTiles: HomeCategoryTile[];
+}
+
+async function getJson<T>(path: string, pick: (json: unknown) => T | undefined, fallback: T): Promise<T> {
+  try {
+    const base = await serverApiBase();
+    const res = await fetch(`${base}${path}`, { next: { revalidate: 3600, tags: [CATALOG_TAG] } });
+    if (!res.ok) return fallback;
+    return pick(await res.json()) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const primaryImage = (p?: Product) =>
+  p?.images?.find((i) => i.isPrimary)?.imageUrl ?? p?.images?.[0]?.imageUrl ?? null;
+
+async function getCategoryTiles(limit: number): Promise<HomeCategoryTile[]> {
+  const top = await getTopCategories(limit);
+  return Promise.all(
+    top.map(async (c) => {
+      const { data } = await getProductsPage({ categorySlug: c.slug, limit: 1 });
+      return { name: c.name, slug: c.slug, imageUrl: primaryImage(data[0]) };
+    })
+  );
+}
+
+export const getHomeData = cache(async (): Promise<HomeData> => {
+  const [bestSellers, newArrivals, specialOffers, spotlight, featuredBrands, categoryTiles] =
+    await Promise.all([
+      getProductsPage({ isFeatured: "true", limit: 16 }).then((p) => p.data),
+      getProductsPage({ limit: 16, sortBy: "createdAt", sortOrder: "desc" }).then((p) => p.data),
+      getJson<Product[]>("/products/discounted?limit=5", (j) => (j as { data?: { data?: Product[] } })?.data?.data, []),
+      getProductsPage({ homepageFeature: "true", limit: 10 }).then((p) => p.data),
+      getJson<HomeBrand[]>("/brands/featured", (j) => (j as { data?: HomeBrand[] })?.data, []),
+      getCategoryTiles(5),
+    ]);
+  return { bestSellers, newArrivals, specialOffers, spotlight, featuredBrands, categoryTiles };
+});

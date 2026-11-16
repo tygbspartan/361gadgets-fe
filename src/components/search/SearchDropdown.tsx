@@ -6,6 +6,7 @@ import { useSearchProductsQuery } from "@/lib/redux/features/products/productsAp
 import Image from "next/image";
 import Link from "next/link";
 import { Search, Loader2, ArrowRight, Clock } from "lucide-react";
+import SearchResultsSkeleton from "@/components/skeletons/SearchResultsSkeleton";
 import { ROUTES } from "@/constants/routes";
 
 interface SearchDropdownProps {
@@ -134,10 +135,7 @@ export default function SearchDropdown({
         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[500px] overflow-y-auto z-50">
           {/* Loading State */}
           {(isLoading || isFetching) && debouncedQuery.length >= 2 && (
-            <div className="p-8 text-center">
-              <Loader2 className="h-8 w-8 mx-auto text-red-600 animate-spin mb-2" />
-              <p className="text-gray-600">Searching...</p>
-            </div>
+            <SearchResultsSkeleton />
           )}
 
           {/* No query - Show recent searches */}

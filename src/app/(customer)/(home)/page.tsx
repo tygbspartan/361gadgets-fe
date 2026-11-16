@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { publicPage } from "@/lib/seo/metadata";
 import HomePageContent from "@/components/home/HomePageContent";
+import { getHomeData } from "@/lib/server/catalog";
 
-// The homepage sections are client components; this server wrapper exists so
-// the page can declare its own metadata (canonical URL, share card).
+// Built on the server with its data (ISR): refreshed hourly, or right away when
+// the backend reports a catalog change (POST /api/revalidate).
+export const revalidate = 3600;
 export const metadata: Metadata = publicPage({
   title: "361 Gadgets | Genuine Tech & Gadgets in Nepal",
   absoluteTitle: true,
@@ -12,6 +14,7 @@ export const metadata: Metadata = publicPage({
   path: "/",
 });
 
-export default function HomePage() {
-  return <HomePageContent />;
+export default async function HomePage() {
+  const data = await getHomeData();
+  return <HomePageContent data={data} />;
 }

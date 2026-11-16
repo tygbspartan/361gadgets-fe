@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import { useGetProductsQuery } from "@/lib/redux/features/products/productsApi";
 import { Product } from "@/types/product.types";
 import { ROUTES } from "@/constants/routes";
 
@@ -14,12 +14,14 @@ function FeaturedCard({ product, index }: { product: Product; index: number }) {
     product.images?.[0]?.imageUrl;
 
   const ImageBlock = (
-    <div className="order-2 lg:order-0 w-full lg:w-1/2 aspect-square md:aspect-auto md:h-150 lg:h-full overflow-hidden">
+    <div className="relative order-2 lg:order-0 w-full lg:w-1/2 aspect-square md:aspect-auto md:h-150 lg:h-full overflow-hidden">
       {primaryImg ? (
-        <img
+        <Image
           src={primaryImg}
           alt={product.name}
-          className="w-full h-full object-cover"
+          fill
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-cover"
         />
       ) : (
         <div className="w-full h-full bg-gray-100" />
@@ -80,20 +82,9 @@ function FeaturedCard({ product, index }: { product: Product; index: number }) {
   );
 }
 
-export default function HomepageFeatured() {
-  const { data, isLoading } = useGetProductsQuery({
-    homepageFeature: true,
-    limit: 10,
-    isActive: true,
-  });
-
-  if (isLoading) return (
-    <div className="w-full bg-gray-50 flex items-center justify-center h-180">
-      <div className="w-8 h-8 border-2 border-black/10 border-t-primary rounded-full animate-spin" />
-    </div>
-  );
-
-  const products = data?.data.data ?? [];
+/* Products marked "homepage feature" by the superadmin. Data comes from the
+   server (getHomeData). */
+export default function HomepageFeatured({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
 
   return (

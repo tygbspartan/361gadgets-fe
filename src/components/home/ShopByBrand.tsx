@@ -1,8 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useGetFeaturedBrandsQuery } from "@/lib/redux/features/brands/brandsApi";
+import type { HomeBrand } from "@/lib/server/catalog";
 import SectionTitle from "@/components/home/SectionTitle";
 import { ROUTES } from "@/constants/routes";
 
@@ -11,9 +9,8 @@ import { ROUTES } from "@/constants/routes";
  * linking to each brand's page (/brand/<slug>). Hidden when none are featured.
  * Columns: 2 → 3 → 4 → 6, so 6 or 12 featured brands fill whole rows.
  */
-export default function ShopByBrand() {
-  const { data } = useGetFeaturedBrandsQuery();
-  const brands = (data?.data ?? []).filter((b) => b.isActive);
+export default function ShopByBrand({ brands: all }: { brands: HomeBrand[] }) {
+  const brands = all.filter((b) => b.isActive);
 
   if (brands.length === 0) return null;
 

@@ -279,11 +279,6 @@
   transform: translateY(-2px);
 }
 
-/* Held on frame 0 while the PageLoader overlay is up (HeroStage). */
-.hero[data-boot-held] .hero-boot {
-  animation-play-state: paused;
-}
-
 /* Already booted this session: the root-layout script marks <html> on a
    reload, HeroStage marks the section on a client-side return. */
 :root[data-hero-booted] .hero-boot,

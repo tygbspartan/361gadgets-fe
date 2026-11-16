@@ -9,6 +9,7 @@ import Link from "next/link";
 import { RootState } from "@/lib/redux/store";
 import { logout } from "@/lib/redux/features/auth/authSlice";
 import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categoriesApi";
+import SearchResultsSkeleton from "@/components/skeletons/SearchResultsSkeleton";
 import { useSearchProductsQuery } from "@/lib/redux/features/products/productsApi";
 import { useCart } from "@/lib/redux/features/cart/useCart";
 import { useWishlist } from "@/lib/redux/features/wishlist/useWishlist";
@@ -78,7 +79,7 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const activeCategorySlug = useSelector((state: RootState) => state.ui.activeCategorySlug);
-  const { data: categoriesData } = useGetCategoriesQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } = useGetCategoriesQuery();
   const { items: cartItems } = useCart();
   const { items: wishlistItems } = useWishlist();
 
@@ -309,9 +310,7 @@ export default function Navbar() {
                 {searchOpen && debouncedQuery.length >= 3 && (
                   <div className="absolute top-full left-0 mt-2 w-112.5 bg-white rounded-lg shadow-lg border border-[#E2E4E5] overflow-hidden z-50">
                     {searchFetching ? (
-                      <div className="flex items-center justify-center p-6">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
+                      <SearchResultsSkeleton />
                     ) : searchResults && searchResults.length > 0 ? (
                       <>
                         <div className="max-h-100 overflow-y-auto search-dropdown">
@@ -496,6 +495,13 @@ export default function Navbar() {
         >
           <div className="page-wrapper">
             <div className="flex justify-center h-15.5 gap-5">
+              {/* Still loading: placeholder labels so the bar never sits empty. */}
+              {categoriesLoading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} aria-hidden className="flex items-center px-2.5">
+                    <div className="h-3.5 w-24 animate-pulse rounded bg-white/15" />
+                  </div>
+                ))}
               {categories.map((level1) => {
                 const isActive = isCategoryActive(level1, activeCategorySlug);
                 const isOpen = openCat === level1.id;
@@ -616,6 +622,12 @@ export default function Navbar() {
                   Categories
                 </h3>
                 <div className="space-y-1">
+                  {categoriesLoading &&
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} aria-hidden className="px-3 py-2">
+                        <div className="h-4 w-2/5 animate-pulse rounded bg-gray-100" />
+                      </div>
+                    ))}
                   {categories.map((level1) => (
                     <details key={level1.id} className="group">
                       <summary className="flex items-center justify-between cursor-pointer px-3 py-2 hover:bg-gray-50 rounded-md text-sm font-medium text-gray-800">

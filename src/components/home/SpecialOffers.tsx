@@ -1,19 +1,11 @@
-"use client";
-
-import { useGetSpecialOffersQuery } from "@/lib/redux/features/products/productsApi";
+import type { Product } from "@/types/product.types";
 import ProductGridCard from "@/components/products/ProductGridCard";
 import SectionTitle from "@/components/home/SectionTitle";
-import Spinner from "@/components/ui/Spinner";
 
-interface SpecialOffersProps {
-  limit?: number;
-}
-
-export default function SpecialOffers({ limit = 5 }: SpecialOffersProps) {
-  const { data: products, isLoading, error } = useGetSpecialOffersQuery(limit);
-
-  if (isLoading) return <Spinner />;
-  if (error || !products || products.length === 0) return null;
+/* Discounted products (original price above the selling price). Data comes
+   from the server (getHomeData). */
+export default function SpecialOffers({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
 
   return (
     <div>

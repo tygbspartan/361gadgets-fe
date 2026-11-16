@@ -124,9 +124,12 @@ export default function ResponsiveFlyout({ open, onClose, children }: Props) {
             style={{
               transform: open ? `translateY(${dragY}px)` : "translateY(101%)",
             }}
+            /* Closed = also visibility:hidden (after the slide finishes, via the
+               visibility transition), so the off-screen sheet is never painted,
+               focusable or read out by screen readers. */
             className={`pointer-events-auto flex-1 min-h-0 flex flex-col bg-white rounded-t-[20px] overflow-hidden ${
-              dragging ? "" : "transition-transform duration-300 ease-out"
-            }`}
+              open ? "visible" : "invisible"
+            } ${dragging ? "" : "transition-[transform,visibility] duration-300 ease-out"}`}
           >
             {/* Drag handle */}
             <div
@@ -145,8 +148,8 @@ export default function ResponsiveFlyout({ open, onClose, children }: Props) {
         /* Desktop: right-side panel */
         <div
           style={{ width: extraWide ? "calc(40% + 250px)" : "40%" }}
-          className={`fixed top-0 right-0 h-full max-w-[90%] bg-white z-60 flex flex-col transition-transform duration-300 ease-in-out ${
-            open ? "translate-x-0" : "translate-x-full"
+          className={`fixed top-0 right-0 h-full max-w-[90%] bg-white z-60 flex flex-col transition-[transform,visibility] duration-300 ease-in-out ${
+            open ? "visible translate-x-0" : "invisible translate-x-full"
           }`}
         >
           {children}

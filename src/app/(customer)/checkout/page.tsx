@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { Loader2 } from "lucide-react";
+import CheckoutSkeleton from "@/components/skeletons/CheckoutSkeleton";
 import Link from "next/link";
 import { RootState } from "@/lib/redux/store";
 import { useCart } from "@/lib/redux/features/cart/useCart";
@@ -256,14 +257,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (cartLoading) {
-    return (
-      <div className="page-wrapper pb-16 text-center">
-        <Loader2 className="h-12 w-12 mx-auto animate-spin" />
-        <p className="mt-4 text-gray-600">Loading…</p>
-      </div>
-    );
-  }
+  if (cartLoading) return <CheckoutSkeleton />;
 
   if (orderPlaced) {
     return (

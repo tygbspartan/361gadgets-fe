@@ -1,7 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { FlyProvider } from "@/components/providers/FlyProvider";
-import LoadingProvider from "@/components/providers/LoadingProvider";
 import { ToastProvider } from "@/components/ui/ToastStack";
 import CursorFollower from "@/components/ui/CursorFollower";
 import type { Metadata } from "next";
@@ -17,7 +16,6 @@ export default function AuthLayout({
   return (
     <ToastProvider>
       <FlyProvider>
-        <LoadingProvider>
           <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-1 flex items-center justify-center px-4 pb-12.5">
@@ -26,7 +24,6 @@ export default function AuthLayout({
             <Footer />
           </div>
           <CursorFollower />
-        </LoadingProvider>
       </FlyProvider>
     </ToastProvider>
   );

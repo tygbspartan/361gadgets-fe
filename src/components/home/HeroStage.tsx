@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import {
   BOARD_Y,
   HALF_W,
@@ -11,7 +11,6 @@ import {
   TRACES,
   drawOrder,
 } from "@/components/home/heroCircuit";
-import { PageReadyContext } from "@/components/providers/LoadingProvider";
 
 /*
  * The hero's stage: a circuit board that draws itself in on first load, then
@@ -115,9 +114,6 @@ export default function HeroStage({ children }: { children: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   /* The board and its spotlight, moved together by the scroll parallax. */
   const depthRef = useRef<HTMLDivElement>(null);
-  /* The boot is held (animations paused on frame 0) while the PageLoader
-     overlay covers the page, so it plays when there's someone to see it. */
-  const pageReady = useContext(PageReadyContext);
 
   /* Boot once per session. Layout effect so a client-side return to the
      homepage lands on the finished state before the first paint. */
@@ -133,9 +129,8 @@ export default function HeroStage({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  /* Only count the boot as seen once it has actually started playing. */
+  /* The boot plays from first paint (pure CSS); record that it has been seen. */
   useEffect(() => {
-    if (!pageReady) return;
     try {
       if (!sessionStorage.getItem(HERO_BOOT_KEY)) {
         sessionStorage.setItem(HERO_BOOT_KEY, "1");
@@ -144,7 +139,7 @@ export default function HeroStage({ children }: { children: ReactNode }) {
     } catch {
       /* Storage blocked: the boot just plays every visit. */
     }
-  }, [pageReady]);
+  }, []);
 
   /* Spotlight position. Written straight to CSS custom properties from a rAF
      loop — never React state, so pointer movement causes no re-renders. */
@@ -351,7 +346,6 @@ export default function HeroStage({ children }: { children: ReactNode }) {
        strip would poke into the first screen as a white band. */
     <section
       ref={sectionRef}
-      data-boot-held={pageReady ? undefined : ""}
       className="hero relative isolate flex min-h-[calc(100svh-var(--nav-h)+var(--hero-overlap))] flex-col overflow-hidden bg-(--hero-bg)"
     >
       <div ref={depthRef} aria-hidden="true" className="hero-depth pointer-events-none absolute inset-0">

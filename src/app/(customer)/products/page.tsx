@@ -9,7 +9,7 @@ import { useGetCategoriesQuery } from "@/lib/redux/features/categories/categorie
 import { useGetBrandsQuery, useGetBrandsForCategoryQuery } from "@/lib/redux/features/brands/brandsApi";
 import ProductGridCard from "@/components/products/ProductGridCard";
 import ProductCardSkeleton from "@/components/products/ProductCardSkeleton";
-import Spinner from "@/components/ui/Spinner";
+import CollectionSkeleton from "@/components/skeletons/CollectionSkeleton";
 import ProductFilters from "@/components/products/ProductFilters";
 import ProductSort from "@/components/products/ProductSort";
 import MobileFilterSheet from "@/components/products/MobileFilterSheet";
@@ -362,7 +362,7 @@ function ProductListingContent() {
 
 export default function ProductListingPage() {
   return (
-    <Suspense fallback={<Spinner className="min-h-[60vh]" />}>
+    <Suspense fallback={<CollectionSkeleton />}>
       <ProductListingContent />
     </Suspense>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect, Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
+import ListSkeleton from "@/components/skeletons/ListSkeleton";
 import ResponsiveFlyout from "@/components/ui/ResponsiveFlyout";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
@@ -128,7 +129,7 @@ export default function CartFlyout({ open, onClose }: Props) {
         {/* ── Body ── */}
         <div className="flex-1 min-h-0 overflow-y-auto py-4 px-6 space-y-5">
           {!mounted || isLoading ? (
-            <p className="text-sm text-gray-500 text-center mt-10">Loading…</p>
+            <ListSkeleton rows={3} />
           ) : cartItems.length === 0 ? (
             <EmptyState
               icon="iconoir:simple-cart"

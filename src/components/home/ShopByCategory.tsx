@@ -1,33 +1,21 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useGetCategoriesQuery, Category } from "@/lib/redux/features/categories/categoriesApi";
-import { useGetProductsQuery } from "@/lib/redux/features/products/productsApi";
+import type { HomeCategoryTile } from "@/lib/server/catalog";
 import SectionTitle from "@/components/home/SectionTitle";
-import Spinner from "@/components/ui/Spinner";
 import { ROUTES } from "@/constants/routes";
 
-const MAX_TILES = 5;
-
-function CategoryCard({ category }: { category: Category }) {
-  const { data } = useGetProductsQuery({
-    categorySlug: category.slug,
-    limit: 1,
-    isActive: true,
-  });
-
-  const product = data?.data?.data?.[0];
-  const primaryImg =
-    product?.images?.find((i) => i.isPrimary)?.imageUrl ??
-    product?.images?.[0]?.imageUrl;
-
+/*
+ * Top-level categories as photo tiles, each showing a product from that
+ * category. Derived from the catalogue (getHomeData), not a hardcoded list, so
+ * the tiles always reflect real categories, in admin display order.
+ */
+function CategoryCard({ category }: { category: HomeCategoryTile }) {
   return (
     <Link href={`${ROUTES.CATEGORY}/${category.slug}`} data-cursor="Explore" className="block w-full">
       <div className="surface-card hover-lift group relative w-full aspect-317/359 rounded-2xl overflow-hidden">
-        {primaryImg ? (
+        {category.imageUrl ? (
           <Image
-            src={primaryImg}
+            src={category.imageUrl}
             alt={category.name}
             fill
             sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, 50vw"
@@ -54,20 +42,7 @@ function CategoryCard({ category }: { category: Category }) {
   );
 }
 
-export default function ShopByCategory() {
-  const { data: categoriesData, isLoading } = useGetCategoriesQuery();
-
-  if (isLoading) return <Spinner />;
-
-  /*
-   * Derived from the catalogue rather than a hardcoded name list, so the tiles
-   * always reflect real categories. Top-level only, in admin display order.
-   */
-  const categories = (categoriesData?.data ?? [])
-    .filter((c) => c.isActive && c.parentId === null)
-    .sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name))
-    .slice(0, MAX_TILES);
-
+export default function ShopByCategory({ categories }: { categories: HomeCategoryTile[] }) {
   if (categories.length === 0) return null;
 
   return (
@@ -75,7 +50,7 @@ export default function ShopByCategory() {
       <SectionTitle>Shop by Category</SectionTitle>
       <div className="mt-5 lg:mt-8.75 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 lg:gap-5">
         {categories.map((cat) => (
-          <CategoryCard key={cat.id} category={cat} />
+          <CategoryCard key={cat.slug} category={cat} />
         ))}
       </div>
     </div>

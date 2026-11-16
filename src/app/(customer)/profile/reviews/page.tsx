@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import EmptyState from "@/components/ui/EmptyState";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import ListSkeleton from "@/components/skeletons/ListSkeleton";
 import { Icon } from "@iconify/react";
 import { RootState } from "@/lib/redux/store";
 import {
@@ -129,9 +129,7 @@ export default function ProfileReviewsPage() {
         <ProfileNavMobile />
 
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
+          <ListSkeleton rows={3} />
         ) : initialReviews.length === 0 ? (
           <EmptyState
             icon="carbon:review"
