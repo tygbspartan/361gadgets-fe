@@ -32,7 +32,9 @@ const ABOUT = {
   },
 };
 
-export default function AboutSection() {
+/* On the homepage the heading is an h2; on /about it is the page's h1. */
+export default function AboutSection({ headingLevel = 2 }: { headingLevel?: 1 | 2 }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   return (
     <section aria-labelledby="about-heading">
       <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16 xl:gap-20">
@@ -51,13 +53,13 @@ export default function AboutSection() {
           <p className="font-inter text-[11px] font-medium uppercase tracking-[0.22em] text-[#555555] lg:text-[12px]">
             {ABOUT.eyebrow}
           </p>
-          <h2
+          <Heading
             id="about-heading"
             className="mt-3 font-montserrat text-[28px] font-bold uppercase leading-[1.02] tracking-[-0.02em] text-[#111111] sm:text-[34px] lg:text-[42px] xl:text-[48px]"
           >
             {ABOUT.heading}
             <span className="text-(--brand-accent)">.</span>
-          </h2>
+          </Heading>
 
           <div className="mt-5 space-y-4 font-inter text-[14px] leading-relaxed text-[#555555] lg:mt-6 lg:text-[16px]">
             {ABOUT.paragraphs.map((p) => (

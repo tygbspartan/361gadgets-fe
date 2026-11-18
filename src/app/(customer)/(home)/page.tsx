@@ -7,10 +7,10 @@ import { getHomeData } from "@/lib/server/catalog";
 // the backend reports a catalog change (POST /api/revalidate).
 export const revalidate = 3600;
 export const metadata: Metadata = publicPage({
-  title: "361 Gadgets | Genuine Tech & Gadgets in Nepal",
+  title: "361 Gadgets Nepal: Buy Gadgets & Accessories Online in Nepal",
   absoluteTitle: true,
   description:
-    "Shop genuine gadgets and tech online in Nepal: phones, earbuds, laptops, gaming gear, smart devices and accessories from trusted brands, delivered to your door.",
+    "Buy genuine gadgets online from 361 Gadgets Nepal, the online gadget store. Browse earbuds, speakers, smart watches, power banks, gaming gear and more.",
   path: "/",
 });
 

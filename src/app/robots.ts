@@ -5,8 +5,8 @@ import { SITE_URL as SITE } from "@/lib/seo/jsonld";
 // noindex, in case a link elsewhere gets one listed anyway.
 //
 // Deliberately NOT blocked, because they carry "noindex, follow" and a blocked
-// page's noindex can't be read: /products (the filter UI; its links lead to
-// every product) and the sign-in forms.
+// page's noindex can't be read: filtered /products views (?category=…, the
+// plain /products is indexed) and the sign-in forms.
 const DISALLOW = [
   "/admin",
   "/account",

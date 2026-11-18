@@ -7,6 +7,13 @@ import FooterLink from "@/components/layout/FooterLink";
 
 type SitemapLink = { label: string; href: string };
 
+const SHOP_LINKS: SitemapLink[] = [
+  { label: "All Products", href: ROUTES.PRODUCTS },
+  { label: "All Brands", href: ROUTES.BRANDS },
+  { label: "About Us", href: ROUTES.ABOUT },
+  { label: "Contact Us", href: ROUTES.CONTACT },
+];
+
 const ACCOUNT_LINKS: SitemapLink[] = [
   { label: "My Orders", href: ROUTES.ORDERS_HISTORY },
   { label: "My Reviews", href: ROUTES.MY_REVIEWS },
@@ -23,17 +30,18 @@ const LEGAL_LINKS: SitemapLink[] = [
   { label: "Terms & Conditions", href: ROUTES.TERMS },
 ];
 
-/* Account pages when signed in, Login / Sign Up otherwise, then legal —
-   left-aligned within each column, with the pair centred as one block on
-   narrow screens. */
+/* Shop pages, then account pages when signed in (Login / Sign Up otherwise),
+   then legal. Left-aligned within each column, the columns centred as one
+   block on narrow screens. Every page links here, which tells search engines
+   these are the site's main pages. */
 export default function FooterSitemap() {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-  const columns = [isAuthenticated ? ACCOUNT_LINKS : GUEST_LINKS, LEGAL_LINKS];
+  const columns = [SHOP_LINKS, isAuthenticated ? ACCOUNT_LINKS : GUEST_LINKS, LEGAL_LINKS];
 
   return (
     <nav
       aria-label="Footer"
-      className="mx-auto mt-6 grid w-fit grid-cols-[auto_auto] gap-x-12 text-left font-inter text-base sm:gap-x-16 md:mx-0"
+      className="mx-auto mt-6 grid w-fit grid-cols-[auto_auto] gap-x-12 gap-y-6 text-left font-inter text-base sm:grid-cols-[auto_auto_auto] sm:gap-x-12 md:mx-0"
     >
       {columns.map((column, i) => (
         <ul key={i} className="space-y-1.5">

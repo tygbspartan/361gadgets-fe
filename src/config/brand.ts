@@ -31,7 +31,13 @@ export const CONTACT = {
   address: "Kalopul, Kathmandu",
   phone: { label: "+977 976-8988420", tel: "+9779768988420" },
   email: "361gadgets.np@gmail.com",
-} as const;
+  /** Shop opening hours, shown on /contact, e.g. "Sun–Fri, 10:00 AM – 7:00 PM".
+   *  null hides the line. */
+  hours: null as string | null,
+  /** Google Maps link to the shop (Maps → Share → Copy link). null shows a
+   *  search for the address instead. */
+  mapUrl: null as string | null,
+};
 
 /* Official social profiles: the Footer icons and the Organization schema
    (sameAs), so Google can tie them to the store. */

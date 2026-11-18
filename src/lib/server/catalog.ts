@@ -383,3 +383,11 @@ export const getHomeData = cache(async (): Promise<HomeData> => {
     ]);
   return { bestSellers, newArrivals, specialOffers, spotlight, featuredBrands, categoryTiles };
 });
+
+/** Every active brand, A–Z, for the /brands page. */
+export async function getAllBrands(): Promise<HomeBrand[]> {
+  const brands = await getJson<HomeBrand[]>("/brands", (j) => (j as { data?: HomeBrand[] })?.data, []);
+  return brands
+    .filter((b) => b.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+}

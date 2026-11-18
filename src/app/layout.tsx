@@ -27,9 +27,9 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
-const SITE_TITLE = "361 Gadgets | Genuine Tech & Gadgets in Nepal";
+const SITE_TITLE = "361 Gadgets Nepal: Buy Gadgets & Accessories Online in Nepal";
 const SITE_DESCRIPTION =
-  "Shop genuine gadgets & tech online in Nepal — phones, accessories & more from trusted brands, delivered to your door.";
+  "Buy genuine gadgets online from 361 Gadgets Nepal, the online gadget store. Browse earbuds, speakers, smart watches, power banks, gaming gear and more.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -35,4 +35,7 @@ export const ROUTES = {
   WISHLIST: "/wishlist",
   TERMS: "/terms",
   POLICIES: "/policies",
+  ABOUT: "/about",
+  CONTACT: "/contact",
+  BRANDS: "/brands",
 };
