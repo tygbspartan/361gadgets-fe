@@ -18,6 +18,7 @@ import authReducer from "./features/auth/authSlice";
 import uiReducer from "./features/ui/uiSlice";
 import guestCartReducer from "./features/cart/guestCartSlice";
 import guestWishlistReducer from "./features/wishlist/guestWishlistSlice";
+import compareReducer from "./features/compare/compareSlice";
 
 export const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ export const store = configureStore({
     ui: uiReducer,
     guestCart: guestCartReducer,
     guestWishlist: guestWishlistReducer,
+    compare: compareReducer,
     [authApi.reducerPath]: authApi.reducer,
     [productsApi.reducerPath]: productsApi.reducer,
     [categoriesApi.reducerPath]: categoriesApi.reducer,

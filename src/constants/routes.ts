@@ -38,4 +38,5 @@ export const ROUTES = {
   ABOUT: "/about",
   CONTACT: "/contact",
   BRANDS: "/brands",
+  COMPARE: "/compare",
 };

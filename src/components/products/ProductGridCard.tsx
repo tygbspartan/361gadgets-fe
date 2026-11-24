@@ -7,6 +7,7 @@ import { useRef } from "react";
 import { Product } from "@/types/product.types";
 import { useCart } from "@/lib/redux/features/cart/useCart";
 import { useWishlist } from "@/lib/redux/features/wishlist/useWishlist";
+import { useCompare } from "@/lib/redux/features/compare/useCompare";
 import { ROUTES } from "@/constants/routes";
 import { useFly } from "@/components/providers/FlyProvider";
 import { useToast } from "@/components/ui/ToastStack";
@@ -21,6 +22,15 @@ export default function ProductGridCard({ product }: Props) {
   const imgRef = useRef<HTMLDivElement>(null);
   const { isInWishlist, addItem: addToWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
+  const { isCompared, toggle: toggleCompare } = useCompare();
+  const compared = isCompared(product.id);
+
+  // Inside the card's link: keep the click from navigating to the product.
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void toggleCompare(product);
+  };
 
   const sortedImages =
     product.images && product.images.length > 0
@@ -106,6 +116,22 @@ export default function ProductGridCard({ product }: Props) {
             <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
             {/* White pill rather than the dark theme's white-alpha glass, which
                 vanished against a light product backdrop. */}
+            {/* Compare: shown on hover (always on touch screens, and while selected). */}
+            <button
+              type="button"
+              onClick={handleCompare}
+              aria-pressed={compared}
+              aria-label={compared ? "Remove from comparison" : "Add to comparison"}
+              data-cursor={compared ? "Remove from compare" : "Compare"}
+              className={`absolute top-2 left-2 h-5.5 @[13.5rem]:h-8.5 rounded-full border shadow-(--elev-1) flex items-center gap-1 px-1.5 @[13.5rem]:px-2.5 font-inter text-[9px] @[13.5rem]:text-[11px] font-semibold uppercase tracking-[0.06em] transition-[opacity,background-color,color] duration-300 ${
+                compared
+                  ? "opacity-100 bg-[#111111] text-white border-[#111111]"
+                  : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 bg-white/85 backdrop-blur text-foreground border-black/10 hover:bg-white"
+              }`}
+            >
+              <Icon icon={compared ? "mdi:check" : "mdi:compare-horizontal"} className="w-3 h-3 @[13.5rem]:w-4 @[13.5rem]:h-4" />
+              <span className="hidden @[13.5rem]:inline">{compared ? "Comparing" : "Compare"}</span>
+            </button>
             <button
               onClick={handleWishlist}
               className="group/heart absolute top-2 right-2 w-5.5 h-5.5 @[13.5rem]:w-8.5 @[13.5rem]:h-8.5 rounded-full bg-white/85 backdrop-blur border border-black/10 shadow-(--elev-1) flex items-center justify-center p-1 @[13.5rem]:p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white"

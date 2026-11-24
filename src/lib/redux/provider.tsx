@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { initializeAuth } from "./features/auth/authSlice";
 import { loadGuestCart } from "./features/cart/guestCartSlice";
 import { loadGuestWishlist } from "./features/wishlist/guestWishlistSlice";
+import { loadCompare } from "./features/compare/compareSlice";
 import GuestSync from "@/components/providers/GuestSync";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,7 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     store.dispatch(initializeAuth());
     store.dispatch(loadGuestCart());
     store.dispatch(loadGuestWishlist());
+    store.dispatch(loadCompare());
   }, []);
 
   return (

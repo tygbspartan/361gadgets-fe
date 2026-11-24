@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react";
 import { Product } from "@/types/product.types";
 import { useCart } from "@/lib/redux/features/cart/useCart";
 import { useWishlist } from "@/lib/redux/features/wishlist/useWishlist";
+import { useCompare } from "@/lib/redux/features/compare/useCompare";
 import { StarDisplay, ReviewSummary } from "./shared";
 import { useFly } from "@/components/providers/FlyProvider";
 import { useToast } from "@/components/ui/ToastStack";
@@ -23,6 +24,7 @@ export default function ProductDetails({
 }: Props) {
   const { addItem: addToCart } = useCart();
   const { isInWishlist: isInWishlistFn, addItem: addToWishlist } = useWishlist();
+  const { isCompared, toggle: toggleCompare, items: compareItems } = useCompare();
   const { flyToCart, flyToWishlist } = useFly();
   const { showToast } = useToast();
   const mainImgRef = useRef<HTMLDivElement>(null);
@@ -305,6 +307,32 @@ export default function ProductDetails({
             >
               {isOOS ? "OUT OF STOCK" : "ADD TO CART"}
             </button>
+          </div>
+
+          {/* Compare: add/remove, and a shortcut to the comparison once 2+ are picked. */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button
+              type="button"
+              onClick={() => void toggleCompare(product)}
+              aria-pressed={mounted && isCompared(product.id)}
+              className="inline-flex items-center gap-1.5 font-inter text-[13px] lg:text-sm font-medium text-[#111111] underline-offset-4 hover:underline"
+            >
+              <Icon
+                icon={mounted && isCompared(product.id) ? "mdi:check-circle" : "mdi:compare-horizontal"}
+                width={18}
+                height={18}
+                className={mounted && isCompared(product.id) ? "text-(--brand-accent)" : ""}
+              />
+              {mounted && isCompared(product.id) ? "Added to compare (remove)" : "Add to compare"}
+            </button>
+            {mounted && isCompared(product.id) && compareItems.length >= 2 && (
+              <Link
+                href={`/compare?ids=${compareItems.map((i) => i.id).join(",")}`}
+                className="font-inter text-[13px] lg:text-sm font-semibold text-(--brand-accent) underline underline-offset-4"
+              >
+                Compare {compareItems.length} products
+              </Link>
+            )}
           </div>
         </div>
 
